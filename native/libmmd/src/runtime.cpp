@@ -15,6 +15,7 @@
 #include <exception>
 #include <new>
 #include <optional>
+#include <stdexcept>
 #include <thread>
 #include <unordered_set>
 #include <variant>
@@ -541,7 +542,7 @@ libmmd_status libmmd_model_get_bone(
     output->ik_target_index = bone.ik_target_index;
     output->ik_iteration_count = bone.ik_iteration_count;
     output->ik_angle_limit = bone.ik_angle_limit;
-    output->ik_link_count = bone.ik_links.size();
+    output->ik_link_count = static_cast<std::uint32_t>(bone.ik_links.size());
     return LIBMMD_STATUS_OK;
 }
 
@@ -950,7 +951,7 @@ libmmd_status libmmd_model_instance_get_render_packet(
     output->matrix_float_count = matrices.size();
     output->bone_count = instance->value->animation().pose().bone_count();
     output->matrix_stride = 16;
-    output->draw_count = instance->model->render_assets.materials.size();
+    output->draw_count = static_cast<std::uint32_t>(instance->model->render_assets.materials.size());
     return LIBMMD_STATUS_OK;
 }
 

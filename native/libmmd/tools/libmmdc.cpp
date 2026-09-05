@@ -20,12 +20,17 @@
 
 namespace {
 
+std::string utf8_path(const std::filesystem::path& path) {
+    const auto encoded = path.generic_u8string();
+    return {encoded.begin(), encoded.end()};
+}
+
 std::vector<std::byte> read_file(const std::filesystem::path& path) {
     const auto size = std::filesystem::file_size(path);
     std::vector<std::byte> bytes(size);
     std::ifstream input(path, std::ios::binary);
     if (!input || !input.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(size))) {
-        throw std::runtime_error("cannot read " + path.string());
+        throw std::runtime_error("cannot read " + utf8_path(path));
     }
     return bytes;
 }
@@ -33,7 +38,7 @@ std::vector<std::byte> read_file(const std::filesystem::path& path) {
 void write_file(const std::filesystem::path& path, const std::span<const std::byte> bytes) {
     std::ofstream output(path, std::ios::binary | std::ios::trunc);
     if (!output || !output.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()))) {
-        throw std::runtime_error("cannot write " + path.string());
+        throw std::runtime_error("cannot write " + utf8_path(path));
     }
 }
 
@@ -46,7 +51,7 @@ std::string lowercase_ascii(std::string value) {
 
 std::optional<std::filesystem::path> resolve_texture(const std::filesystem::path& model, std::string texture) {
     std::replace(texture.begin(), texture.end(), '\\', '/');
-    const std::filesystem::path relative(texture);
+    const std::filesystem::path relative(std::u8string(texture.begin(), texture.end()));
     if (relative.is_absolute()) {
         return std::nullopt;
     }
@@ -63,13 +68,13 @@ std::optional<std::filesystem::path> resolve_texture(const std::filesystem::path
             resolved = exact;
             continue;
         }
-        const auto expected = lowercase_ascii(component.string());
+        const auto expected = lowercase_ascii(utf8_path(component));
         std::optional<std::filesystem::path> match;
         if (!std::filesystem::is_directory(resolved)) {
             return std::nullopt;
         }
         for (const auto& entry : std::filesystem::directory_iterator(resolved)) {
-            if (lowercase_ascii(entry.path().filename().string()) == expected) {
+            if (lowercase_ascii(utf8_path(entry.path().filename())) == expected) {
                 if (match.has_value()) {
                     return std::nullopt;
                 }
@@ -211,7 +216,7 @@ void pack(const std::filesystem::path& input, const std::filesystem::path& outpu
         if (!resolved.has_value()) {
             throw std::runtime_error("missing texture: " + texture);
         }
-        texture = std::filesystem::relative(*resolved, input.parent_path()).generic_string();
+        texture = utf8_path(std::filesystem::relative(*resolved, input.parent_path()));
     }
     const auto bytes = libmmd::pack::build(model, source);
     write_file(output, bytes);
@@ -220,13 +225,17 @@ void pack(const std::filesystem::path& input, const std::filesystem::path& outpu
 
 }
 
+#if defined(_WIN32)
+int wmain(const int argc, wchar_t** argv) {
+#else
 int main(const int argc, char** argv) {
+#endif
     try {
-        if (argc == 3 && std::string_view(argv[1]) == "inspect") {
+        if (argc == 3 && std::filesystem::path(argv[1]) == "inspect") {
             inspect(argv[2]);
             return 0;
         }
-        if (argc == 4 && std::string_view(argv[1]) == "pack") {
+        if (argc == 4 && std::filesystem::path(argv[1]) == "pack") {
             pack(argv[2], argv[3]);
             return 0;
         }

@@ -329,11 +329,12 @@ void Pose::solve_ik(const RuntimeBone& constraint, const std::uint32_t constrain
             const auto effector_direction = normalized(global_positions_[effector] - origin);
             const auto goal_direction = normalized(global_positions_[constraint_index] - origin);
             const auto cosine = std::clamp(dot(effector_direction, goal_direction), -1.0f, 1.0f);
-            auto angle = std::acos(cosine);
-            if (!std::isfinite(angle) || angle <= epsilon) continue;
+            auto axis = cross(effector_direction, goal_direction);
+            const auto sine = std::sqrt(dot(axis, axis));
+            auto angle = std::atan2(sine, cosine);
+            if (!std::isfinite(angle) || angle <= epsilon || sine <= epsilon) continue;
             angle = std::min(angle, maximum_step);
-            auto axis = normalized(cross(effector_direction, goal_direction));
-            if (dot(axis, axis) <= epsilon * epsilon) continue;
+            axis = axis * (1.0f / sine);
             axis = rotate(conjugate(global_rotations_[link]), axis);
             working_rotations_[link] = normalized(working_rotations_[link] * axis_angle(axis, angle));
             if (source_link.limited) {

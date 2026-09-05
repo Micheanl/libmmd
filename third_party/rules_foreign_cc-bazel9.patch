@@ -1,0 +1,43 @@
+diff --git a/toolchains/built_toolchains.bzl b/toolchains/built_toolchains.bzl
+--- a/toolchains/built_toolchains.bzl
++++ b/toolchains/built_toolchains.bzl
+@@ -269,6 +269,7 @@
+         http_archive,
+         name = "glib_dev",
+         build_file_content = '''
++load("@rules_cc//cc:cc_import.bzl", "cc_import")
+ cc_import(
+     name = "glib_dev",
+     hdrs = glob(["include/**"]),
+@@ -287,6 +288,7 @@
+         http_archive,
+         name = "glib_src",
+         build_file_content = '''
++load("@rules_cc//cc:cc_import.bzl", "cc_import")
+ cc_import(
+     name = "msvc_hdr",
+     hdrs = ["msvc_recommended_pragmas.h"],
+@@ -327,6 +329,7 @@
+         http_archive,
+         name = "gettext_runtime",
+         build_file_content = '''
++load("@rules_cc//cc:cc_import.bzl", "cc_import")
+ cc_import(
+     name = "gettext_runtime",
+     shared_library = "bin/libintl-8.dll",
+diff --git a/foreign_cc/built_tools/pkgconfig_build.bzl b/foreign_cc/built_tools/pkgconfig_build.bzl
+--- a/foreign_cc/built_tools/pkgconfig_build.bzl
++++ b/foreign_cc/built_tools/pkgconfig_build.bzl
+@@ -160,10 +160,10 @@
+         args = [
+             "-f Makefile.vc",
+             "CFG=release",
+-            "GLIB_PREFIX=\"$$EXT_BUILD_ROOT/external/glib_dev\"",
++            "GLIB_PREFIX=\"$$EXT_BUILD_ROOT/{}\"".format(Label("@glib_dev//:glib_dev").workspace_root),
+         ],
+         out_binaries = ["pkg-config.exe"],
+-        env = {"INCLUDE": "$$EXT_BUILD_ROOT/external/glib_src"},
++        env = {"INCLUDE": "$$EXT_BUILD_ROOT/{}".format(Label("@glib_src//:msvc_hdr").workspace_root)},
+         out_static_libs = [],
+         out_shared_libs = [],
+         deps = [

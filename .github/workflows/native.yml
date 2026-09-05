@@ -32,7 +32,9 @@ jobs:
           disk-cache: native-${{ matrix.platform }}
           repository-cache: true
       - name: test runtime
-        run: bazel test //native/libmmd:tests --config=release
+        run: bazel test //native/libmmd:tests //:libmmdc --config=release
+      - name: test asset compiler paths
+        run: python -m unittest discover -s tools/tests -v
       - name: stage runtime
         shell: bash
         run: |

@@ -39,7 +39,10 @@ cc_library(
     srcs = CORE_SOURCES,
     hdrs = ["include/libmmd/libmmd.h"],
     includes = ["include"],
-    local_defines = ["LIBMMD_BUILD_SHARED"],
+    local_defines = [
+        "LIBMMD_BUILD_SHARED",
+        "PX_PHYSX_STATIC_LIB",
+    ],
     linkopts = select({
         "@platforms//os:windows": ["ws2_32.lib"],
         "//conditions:default": [],
@@ -57,6 +60,7 @@ cc_library(
     local_defines = [
         "LIBMMD_BUILD_SHARED",
         "LIBMMD_WITH_CUDA",
+        "PX_PHYSX_STATIC_LIB",
     ],
     target_compatible_with = ["@platforms//os:linux"],
     alwayslink = True,

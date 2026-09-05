@@ -22,7 +22,12 @@ public final class VerifyMotion {
             originalInstance.play(original, true, 0.0f);
             exportedInstance.play(exported, true, 0.0f);
             float maximumError = 0.0f;
-            int samples = 121;
+            int maximumErrorSample = 0;
+            int maximumErrorBone = 0;
+            if (original.info().durationFrames() != exported.info().durationFrames()) {
+                throw new IllegalStateException("Motion durations differ");
+            }
+            int samples = original.info().durationFrames() + 1;
             for (int sample = 0; sample < samples; sample++) {
                 scene.update(sample == 0 ? 0.0f : 1.0f / 30.0f);
                 var sourceMatrices = originalInstance.renderPacket().matrices();
@@ -36,14 +41,19 @@ public final class VerifyMotion {
                     if (!Float.isFinite(a) || !Float.isFinite(b)) {
                         throw new IllegalStateException("Non-finite pose at sample " + sample);
                     }
-                    maximumError = Math.max(maximumError, Math.abs(a - b));
+                    float error = Math.abs(a - b);
+                    if (error > maximumError) {
+                        maximumError = error;
+                        maximumErrorSample = sample;
+                        maximumErrorBone = Math.toIntExact(offset / (16L * Float.BYTES));
+                    }
                 }
             }
             System.out.printf(
                 java.util.Locale.ROOT,
-                "{\"samples\":%d,\"bones\":%d,\"source_bound_bones\":%d,\"export_bound_bones\":%d,\"maximum_matrix_error\":%.9f}%n",
+                "{\"samples\":%d,\"bones\":%d,\"source_bound_bones\":%d,\"export_bound_bones\":%d,\"maximum_matrix_error\":%.9f,\"maximum_error_sample\":%d,\"maximum_error_bone\":%d}%n",
                 samples, model.info().boneCount(), original.info().boundBoneCount(),
-                exported.info().boundBoneCount(), maximumError
+                exported.info().boundBoneCount(), maximumError, maximumErrorSample, maximumErrorBone
             );
             if (maximumError > 0.001f) {
                 throw new IllegalStateException("Motion roundtrip changed the evaluated pose");

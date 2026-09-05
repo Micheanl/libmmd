@@ -24,6 +24,10 @@ jobs:
         run: chmod +x ./gradlew
       - name: build
         run: ./gradlew build -Plibmmd.native.rebuild=true
+      - name: test native runtime and asset compiler
+        run: |
+          bazel test //native/libmmd:tests //:libmmdc --config=release
+          python -m unittest discover -s tools/tests -v
       - name: capture build artifacts
         uses: actions/upload-artifact@v7
         with:

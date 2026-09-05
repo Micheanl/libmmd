@@ -100,15 +100,20 @@ MotionClip::MotionClip(const std::span<const pmx::Bone> bones, const vmd::Motion
         frame.frame = source.frame;
         frame.translation = {source.translation[0], source.translation[1], -source.translation[2]};
         frame.rotation = normalized({-source.rotation[0], -source.rotation[1], source.rotation[2], source.rotation[3]});
-        for (std::size_t component_index = 0; component_index < 4; ++component_index) {
+        const auto has_extended_interpolation = std::any_of(
+            source.interpolation.begin() + 16,
+            source.interpolation.end(),
+            [](const std::byte value) { return value != std::byte{0}; });
+        for (std::size_t component_index = 0; component_index < frame.curves.size(); ++component_index) {
+            const auto base = has_extended_interpolation ? component_index * 16 : component_index;
             const auto value = [&](const std::size_t offset) {
                 return std::min(127u, static_cast<unsigned>(std::to_integer<std::uint8_t>(source.interpolation[offset]))) / 127.0f;
             };
             frame.curves[component_index] = {
-                value(component_index),
-                value(component_index + 4),
-                value(component_index + 8),
-                value(component_index + 12),
+                value(base),
+                value(base + 4),
+                value(base + 8),
+                value(base + 12),
             };
         }
         tracks_[entry->second].frames.push_back(frame);

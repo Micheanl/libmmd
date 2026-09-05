@@ -21,8 +21,8 @@ libmmd::vmd::BoneKeyframe frame(const std::uint32_t index, const float translati
     value.translation = {translation, 0.0f, 0.0f};
     value.rotation = {0.0f, 0.0f, 0.0f, 1.0f};
     for (std::size_t component = 0; component < 4; ++component) {
-        value.interpolation[component + 8] = std::byte{127};
-        value.interpolation[component + 12] = std::byte{127};
+        value.interpolation[component * 16 + 8] = std::byte{127};
+        value.interpolation[component * 16 + 12] = std::byte{127};
     }
     return value;
 }

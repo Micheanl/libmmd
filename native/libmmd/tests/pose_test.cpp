@@ -41,6 +41,13 @@ int main() {
     const auto reset = pose.skinning_matrices();
     assert(std::abs(reset[2 * 16 + 4] * 2.0f + reset[2 * 16 + 12] - x) < 0.001f);
 
+    bones[3].position = {0.0001f, 2.0f, 0.0f};
+    libmmd::Pose nearly_aligned(bones);
+    nearly_aligned.evaluate();
+    const auto aligned = nearly_aligned.skinning_matrices();
+    assert(std::abs(aligned[2 * 16 + 4] * 2.0f + aligned[2 * 16 + 12] - 0.0001f) < 0.000001f);
+    assert(std::abs(aligned[2 * 16 + 5] * 2.0f + aligned[2 * 16 + 13] - 2.0f) < 0.000001f);
+
     bones.resize(2);
     bones[0].flags = 0;
     bones[1].flags = 0;
