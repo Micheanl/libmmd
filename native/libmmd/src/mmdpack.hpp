@@ -12,7 +12,7 @@
 
 namespace libmmd::pack {
 
-inline constexpr std::uint32_t format_version = 2;
+inline constexpr std::uint32_t format_version = 3;
 
 struct Info {
     std::uint32_t version;
@@ -27,6 +27,7 @@ struct Info {
     std::uint32_t morph_count;
     std::uint32_t rigid_body_count;
     std::uint32_t joint_count;
+    std::uint32_t soft_body_count;
 };
 
 struct Error {

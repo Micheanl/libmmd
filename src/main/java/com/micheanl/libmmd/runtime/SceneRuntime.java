@@ -23,6 +23,9 @@ public final class SceneRuntime {
     private static final MemoryLayout CONFIG_LAYOUT = MemoryLayout.structLayout(
         JAVA_INT, JAVA_INT, JAVA_FLOAT, JAVA_INT
     );
+    private static final MemoryLayout PHYSICS_CONFIG_LAYOUT = MemoryLayout.structLayout(
+        JAVA_INT, JAVA_INT, MemoryLayout.sequenceLayout(3, JAVA_FLOAT), JAVA_FLOAT, JAVA_FLOAT, JAVA_INT, JAVA_INT
+    );
     private static final MemoryLayout UPDATE_LAYOUT = MemoryLayout.structLayout(
         JAVA_INT, JAVA_INT, JAVA_LONG, JAVA_INT, JAVA_INT, JAVA_INT, JAVA_INT, JAVA_FLOAT, JAVA_FLOAT
     );
@@ -73,6 +76,7 @@ public final class SceneRuntime {
 
     private final NativeRuntime owner;
     private final MethodHandle createScene;
+    private final MethodHandle createSceneWithPhysics;
     private final MethodHandle destroyScene;
     private final MethodHandle updateScene;
     private final MethodHandle createInstance;
@@ -81,6 +85,7 @@ public final class SceneRuntime {
     private final MethodHandle setVisible;
     private final MethodHandle play;
     private final MethodHandle stop;
+    private final MethodHandle resetPhysics;
     private final MethodHandle getState;
     private final MethodHandle getMatrices;
     private final MethodHandle getRenderPacket;
@@ -89,6 +94,16 @@ public final class SceneRuntime {
     SceneRuntime(NativeRuntime owner, Linker linker, SymbolLookup symbols) {
         this.owner = owner;
         createScene = downcall(linker, symbols, "libmmd_scene_create", JAVA_INT, ADDRESS, ADDRESS, ADDRESS);
+        createSceneWithPhysics = optionalDowncall(
+            linker,
+            symbols,
+            "libmmd_scene_create_with_physics",
+            JAVA_INT,
+            ADDRESS,
+            ADDRESS,
+            ADDRESS,
+            ADDRESS
+        );
         destroyScene = downcallVoid(linker, symbols, "libmmd_scene_destroy", ADDRESS);
         updateScene = downcall(linker, symbols, "libmmd_scene_update", JAVA_INT, ADDRESS, JAVA_FLOAT, ADDRESS);
         createInstance = downcall(
@@ -135,6 +150,7 @@ public final class SceneRuntime {
             ADDRESS,
             JAVA_FLOAT
         );
+        resetPhysics = optionalDowncall(linker, symbols, "libmmd_model_instance_reset_physics", JAVA_INT, ADDRESS);
         getState = downcall(
             linker,
             symbols,
@@ -166,14 +182,37 @@ public final class SceneRuntime {
     }
 
     public synchronized Scene create(float maximumDeltaSeconds) {
+        return createScene(maximumDeltaSeconds, null);
+    }
+
+    public synchronized Scene create(float maximumDeltaSeconds, PhysicsConfig physicsConfig) {
+        return createScene(maximumDeltaSeconds, Objects.requireNonNull(physicsConfig, "physicsConfig"));
+    }
+
+    private Scene createScene(float maximumDeltaSeconds, PhysicsConfig physicsConfig) {
         owner.ensureOpen();
         requireFinitePositive(maximumDeltaSeconds, "maximumDeltaSeconds");
+        if (physicsConfig != null && createSceneWithPhysics == null) {
+            throw new UnsupportedOperationException("Native library does not provide libmmd_scene_create_with_physics");
+        }
         try (var arena = Arena.ofConfined()) {
             var config = arena.allocate(CONFIG_LAYOUT);
             header(config, CONFIG_LAYOUT);
             config.set(JAVA_FLOAT, 8, maximumDeltaSeconds);
             var output = arena.allocate(ADDRESS);
-            var status = (int) createScene.invokeExact(owner.handle(), config, output);
+            final int status;
+            if (physicsConfig == null) {
+                status = (int) createScene.invokeExact(owner.handle(), config, output);
+            } else {
+                var physics = arena.allocate(PHYSICS_CONFIG_LAYOUT);
+                header(physics, PHYSICS_CONFIG_LAYOUT);
+                writeVector(physics, 8, physicsConfig.gravity());
+                physics.set(JAVA_FLOAT, 20, physicsConfig.metersPerUnit());
+                physics.set(JAVA_FLOAT, 24, physicsConfig.fixedStepSeconds());
+                physics.set(JAVA_INT, 28, physicsConfig.maximumSubsteps());
+                physics.set(JAVA_INT, 32, physicsConfig.solverIterations());
+                status = (int) createSceneWithPhysics.invokeExact(owner.handle(), config, physics, output);
+            }
             check(status, "Unable to create native scene");
             var handle = output.get(ADDRESS, 0);
             if (handle.equals(MemorySegment.NULL)) throw new IllegalStateException("libmmd returned a null scene");
@@ -292,6 +331,20 @@ public final class SceneRuntime {
             throw failure;
         } catch (Throwable failure) {
             throw new IllegalStateException("Unable to call native animation stop", failure);
+        }
+    }
+
+    private void resetPhysics(MemorySegment instance) {
+        if (resetPhysics == null) {
+            throw new UnsupportedOperationException("Native library does not provide libmmd_model_instance_reset_physics");
+        }
+        try {
+            var status = (int) resetPhysics.invokeExact(instance);
+            check(status, "Unable to reset native model physics");
+        } catch (RuntimeException failure) {
+            throw failure;
+        } catch (Throwable failure) {
+            throw new IllegalStateException("Unable to call native model physics reset", failure);
         }
     }
 
@@ -453,6 +506,18 @@ public final class SceneRuntime {
         return linker.downcallHandle(symbol, FunctionDescriptor.of(result, arguments));
     }
 
+    private static MethodHandle optionalDowncall(
+        Linker linker,
+        SymbolLookup symbols,
+        String name,
+        MemoryLayout result,
+        MemoryLayout... arguments
+    ) {
+        return symbols.find(name)
+            .map(symbol -> linker.downcallHandle(symbol, FunctionDescriptor.of(result, arguments)))
+            .orElse(null);
+    }
+
     private static MethodHandle downcallVoid(
         Linker linker,
         SymbolLookup symbols,
@@ -461,6 +526,29 @@ public final class SceneRuntime {
     ) {
         var symbol = symbols.find(name).orElseThrow(() -> new IllegalStateException("Missing native symbol " + name));
         return linker.downcallHandle(symbol, FunctionDescriptor.ofVoid(arguments));
+    }
+
+    public record PhysicsConfig(
+        NativeRuntime.Vector3 gravity,
+        float metersPerUnit,
+        float fixedStepSeconds,
+        int maximumSubsteps,
+        int solverIterations
+    ) {
+        public PhysicsConfig {
+            Objects.requireNonNull(gravity, "gravity");
+            if (!Float.isFinite(gravity.x()) || !Float.isFinite(gravity.y()) || !Float.isFinite(gravity.z())) {
+                throw new IllegalArgumentException("gravity must be finite");
+            }
+            requireFinitePositive(metersPerUnit, "metersPerUnit");
+            requireFinitePositive(fixedStepSeconds, "fixedStepSeconds");
+            if (maximumSubsteps <= 0) throw new IllegalArgumentException("maximumSubsteps must be positive");
+            if (solverIterations <= 0) throw new IllegalArgumentException("solverIterations must be positive");
+        }
+
+        public static PhysicsConfig defaults() {
+            return new PhysicsConfig(new NativeRuntime.Vector3(0.0f, -9.81f, 0.0f), 0.08f, 1.0f / 120.0f, 8, 10);
+        }
     }
 
     public record Transform(
@@ -755,6 +843,11 @@ public final class SceneRuntime {
             ensureOpen();
             scene.owner.stop(handle, fadeSeconds);
             releaseMotion();
+        }
+
+        public void resetPhysics() {
+            ensureOpen();
+            scene.owner.resetPhysics(handle);
         }
 
         public synchronized InstanceState state() {

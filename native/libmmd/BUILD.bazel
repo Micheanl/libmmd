@@ -7,8 +7,12 @@ package(default_visibility = ["//visibility:public"])
 CORE_SOURCES = [
     "src/mmdpack.cpp",
     "src/mmdpack.hpp",
+    "src/model_physics.cpp",
+    "src/model_physics.hpp",
     "src/motion.cpp",
     "src/motion.hpp",
+    "src/pack_physics.cpp",
+    "src/pack_physics.hpp",
     "src/physics.cpp",
     "src/physics.hpp",
     "src/pmx_reader.cpp",
@@ -49,7 +53,7 @@ cc_library(
     }),
     alwayslink = True,
     linkstatic = True,
-    deps = ["@physx//:sdk"],
+    deps = ["@bullet//:sdk", "@physx//:sdk"],
 )
 
 cc_library(
@@ -65,7 +69,7 @@ cc_library(
     target_compatible_with = ["@platforms//os:linux"],
     alwayslink = True,
     linkstatic = True,
-    deps = ["@physx//:sdk_cuda"],
+    deps = ["@bullet//:sdk", "@physx//:sdk_cuda"],
 )
 
 cc_binary(
@@ -164,6 +168,20 @@ cc_test(
 )
 
 cc_test(
+    name = "model_physics_test",
+    srcs = ["tests/model_physics_test.cpp"],
+    copts = TEST_COPTS,
+    deps = [":core"],
+)
+
+cc_test(
+    name = "model_physics_runtime_test",
+    srcs = ["tests/model_physics_runtime_test.cpp"],
+    copts = TEST_COPTS,
+    deps = [":core"],
+)
+
+cc_test(
     name = "physics_cuda_test",
     srcs = ["tests/physics_test.cpp"],
     copts = TEST_COPTS,
@@ -176,6 +194,8 @@ test_suite(
     name = "tests",
     tests = [
         ":mmdpack_test",
+        ":model_physics_test",
+        ":model_physics_runtime_test",
         ":motion_test",
         ":physics_test",
         ":pmx_reader_test",

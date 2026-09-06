@@ -1,4 +1,5 @@
 exports_files([
+    "bullet.BUILD.bazel",
     "rules_foreign_cc-bazel9.patch",
     "physx-linux-headers.patch",
     "physx.BUILD.bazel",

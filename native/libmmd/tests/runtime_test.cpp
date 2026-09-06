@@ -1,8 +1,10 @@
 #include "libmmd/libmmd.h"
 
 #include "native/libmmd/src/mmdpack.hpp"
+#include "native/libmmd/src/pack_physics.hpp"
 #include "native/libmmd/src/pmx_reader.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstring>
@@ -91,9 +93,21 @@ int main() {
     source_model.morphs.resize(1);
     source_model.rigid_bodies.resize(1);
     source_model.joints.resize(1);
+    source_model.soft_bodies.resize(1);
+    auto& soft_body = source_model.soft_bodies.front();
+    soft_body.name = "cloth";
+    soft_body.material_index = 0;
+    soft_body.mass = 0.75f;
+    soft_body.collision_margin = 0.04f;
+    soft_body.anchors.push_back({0, 1, true});
+    soft_body.pinned_vertices = {0};
     const auto pack = libmmd::pack::build(source_model, {});
     libmmd_model* model = nullptr;
-    assert(libmmd_model_load_pack(runtime, pack.data(), pack.size(), &model) == LIBMMD_STATUS_OK);
+    {
+        auto input_pack = pack;
+        assert(libmmd_model_load_pack(runtime, input_pack.data(), input_pack.size(), &model) == LIBMMD_STATUS_OK);
+        std::fill(input_pack.begin(), input_pack.end(), std::byte{0});
+    }
     assert(model != nullptr);
     libmmd_model_info info{};
     info.abi_version = LIBMMD_ABI_VERSION;
@@ -113,6 +127,11 @@ int main() {
     assert(libmmd_model_get_pack_view(model, &pack_view) == LIBMMD_STATUS_OK);
     assert(pack_view.data != nullptr);
     assert(pack_view.size == pack.size());
+    const auto owned_pack = std::span(static_cast<const std::byte*>(pack_view.data), pack_view.size);
+    const auto owned_layout = std::get<libmmd::pack::Layout>(libmmd::pack::inspect_layout(owned_pack));
+    const auto physics_result = libmmd::pack::read_physics_assets(owned_pack, owned_layout);
+    assert(std::holds_alternative<libmmd::pack::PhysicsAssets>(physics_result));
+    assert(std::get<libmmd::pack::PhysicsAssets>(physics_result).soft_bodies == source_model.soft_bodies);
     assert(std::memcmp(pack_view.data, pack.data(), pack.size()) == 0);
     libmmd_mesh_view mesh{};
     mesh.abi_version = LIBMMD_ABI_VERSION;
@@ -275,6 +294,21 @@ int main() {
     assert(libmmd_model_load_pack(runtime, damaged.data(), damaged.size(), &model) == LIBMMD_STATUS_INVALID_DATA);
     assert(model == nullptr);
     assert(std::strlen(libmmd_last_error(runtime)) > 0);
+
+    source_model.rigid_bodies.front().mode = 3;
+    const auto invalid_physics = libmmd::pack::build(source_model, {});
+    assert(libmmd_model_load_pack(runtime, invalid_physics.data(), invalid_physics.size(), &model) ==
+        LIBMMD_STATUS_INVALID_DATA);
+    assert(model == nullptr);
+    assert(std::strstr(libmmd_last_error(runtime), "physics") != nullptr);
+
+    source_model.rigid_bodies.front().mode = 0;
+    soft_body.anchors.front().rigid_body_index = 1;
+    const auto invalid_anchor = libmmd::pack::build(source_model, {});
+    assert(libmmd_model_load_pack(runtime, invalid_anchor.data(), invalid_anchor.size(), &model) ==
+        LIBMMD_STATUS_INVALID_DATA);
+    assert(model == nullptr);
+    assert(std::strstr(libmmd_last_error(runtime), "physics") != nullptr);
     libmmd_runtime_destroy(runtime);
 
     auto invalid = config;

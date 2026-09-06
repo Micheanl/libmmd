@@ -379,41 +379,81 @@ bool nullable_index_in_range(const std::int32_t index, const std::uint32_t count
     return index == -1 || (index >= 0 && static_cast<std::uint32_t>(index) < count);
 }
 
-void skip_soft_bodies(Reader& reader, const Header& header, const Limits& limits) {
+void read_soft_bodies(Reader& reader, const Limits& limits, Model& model) {
+    const auto& header = model.header;
     if (header.version < 2.1f) return;
     const auto count = read_count(reader, limits.max_soft_bodies, "PMX soft body count");
+    constexpr std::size_t minimum_soft_body_bytes = 141;
+    if (count > reader.remaining() / (minimum_soft_body_bytes + header.material_index_size)) {
+        reader.fail("PMX soft body records are truncated");
+    }
+    model.soft_bodies.reserve(count);
     std::uint64_t total_elements = 0;
-    for (std::uint32_t body = 0; body < count; ++body) {
-        static_cast<void>(read_text(reader, header, limits));
-        static_cast<void>(read_text(reader, header, limits));
-        const auto shape = reader.read<std::uint8_t>("PMX soft body shape");
-        if (shape > 1) reader.fail("PMX soft body shape is invalid");
-        static_cast<void>(signed_index(reader, header.material_index_size, "PMX soft body material index"));
-        reader.skip(1 + 2 + 1, "PMX soft body collision data");
-        static_cast<void>(reader.read<std::int32_t>("PMX soft body link distance"));
-        static_cast<void>(reader.read<std::int32_t>("PMX soft body cluster count"));
-        static_cast<void>(read_float(reader, "PMX soft body mass"));
-        static_cast<void>(read_float(reader, "PMX soft body margin"));
-        static_cast<void>(reader.read<std::int32_t>("PMX soft body aero model"));
-        static_cast<void>(read_floats<12>(reader, "PMX soft body configuration"));
-        static_cast<void>(read_floats<6>(reader, "PMX soft body cluster configuration"));
-        reader.skip(4 * sizeof(std::int32_t), "PMX soft body solver iterations");
-        static_cast<void>(read_floats<3>(reader, "PMX soft body material coefficients"));
+    for (std::uint32_t index = 0; index < count; ++index) {
+        SoftBody body{};
+        body.name = read_text(reader, header, limits);
+        body.english_name = read_text(reader, header, limits);
+        body.shape = reader.read<std::uint8_t>("PMX soft body shape");
+        if (body.shape > 1) reader.fail("PMX soft body shape is invalid");
+        body.material_index = signed_index(reader, header.material_index_size, "PMX soft body material index");
+        if (body.material_index < 0 || static_cast<std::size_t>(body.material_index) >= model.materials.size()) {
+            reader.fail("PMX soft body material index is out of range");
+        }
+        body.collision_group = reader.read<std::uint8_t>("PMX soft body collision group");
+        if (body.collision_group > 15) reader.fail("PMX soft body collision group is invalid");
+        body.collision_mask = reader.read<std::uint16_t>("PMX soft body collision mask");
+        body.flags = reader.read<std::uint8_t>("PMX soft body flags");
+        if ((body.flags & ~0x07) != 0) reader.fail("PMX soft body flags are invalid");
+        body.link_distance = reader.read<std::int32_t>("PMX soft body link distance");
+        if (body.link_distance < 0) reader.fail("PMX soft body link distance is invalid");
+        body.cluster_count = reader.read<std::int32_t>("PMX soft body cluster count");
+        if (body.cluster_count < 0) reader.fail("PMX soft body cluster count is invalid");
+        body.mass = read_float(reader, "PMX soft body mass");
+        body.collision_margin = read_float(reader, "PMX soft body margin");
+        body.aero_model = reader.read<std::int32_t>("PMX soft body aero model");
+        if (body.aero_model < 0 || body.aero_model > 4) reader.fail("PMX soft body aero model is invalid");
+        body.configuration = read_floats<12>(reader, "PMX soft body configuration");
+        body.cluster_configuration = read_floats<6>(reader, "PMX soft body cluster configuration");
+        for (auto& iterations : body.solver_iterations) {
+            iterations = reader.read<std::int32_t>("PMX soft body solver iterations");
+            if (iterations < 0) reader.fail("PMX soft body solver iterations are invalid");
+        }
+        body.material_coefficients = read_floats<3>(reader, "PMX soft body material coefficients");
         const auto anchors = read_count(reader, limits.max_soft_body_elements, "PMX soft body anchor count");
         total_elements += anchors;
         if (total_elements > limits.max_soft_body_elements) reader.fail("PMX soft body elements exceed the limit");
+        const auto anchor_bytes = header.rigid_body_index_size + header.vertex_index_size + 1;
+        if (anchors > reader.remaining() / anchor_bytes) reader.fail("PMX soft body anchors are truncated");
+        body.anchors.reserve(anchors);
         for (std::uint32_t anchor = 0; anchor < anchors; ++anchor) {
-            static_cast<void>(signed_index(reader, header.rigid_body_index_size, "PMX soft body anchor rigid body"));
-            static_cast<void>(unsigned_index(reader, header.vertex_index_size, "PMX soft body anchor vertex"));
+            SoftBodyAnchor value{};
+            value.rigid_body_index = signed_index(reader, header.rigid_body_index_size, "PMX soft body anchor rigid body");
+            if (value.rigid_body_index < 0 ||
+                static_cast<std::size_t>(value.rigid_body_index) >= model.rigid_bodies.size()) {
+                reader.fail("PMX soft body anchor rigid body index is out of range");
+            }
+            value.vertex_index = unsigned_index(reader, header.vertex_index_size, "PMX soft body anchor vertex");
+            if (value.vertex_index >= model.vertices.size()) {
+                reader.fail("PMX soft body anchor vertex index is out of range");
+            }
             const auto near_mode = reader.read<std::uint8_t>("PMX soft body anchor mode");
             if (near_mode > 1) reader.fail("PMX soft body anchor mode is invalid");
+            value.near_mode = near_mode == 1;
+            body.anchors.push_back(value);
         }
         const auto pins = read_count(reader, limits.max_soft_body_elements, "PMX soft body pin count");
         total_elements += pins;
         if (total_elements > limits.max_soft_body_elements) reader.fail("PMX soft body elements exceed the limit");
+        if (pins > reader.remaining() / header.vertex_index_size) reader.fail("PMX soft body pins are truncated");
+        body.pinned_vertices.reserve(pins);
         for (std::uint32_t pin = 0; pin < pins; ++pin) {
-            static_cast<void>(unsigned_index(reader, header.vertex_index_size, "PMX soft body pin vertex"));
+            const auto vertex_index = unsigned_index(reader, header.vertex_index_size, "PMX soft body pin vertex");
+            if (vertex_index >= model.vertices.size()) {
+                reader.fail("PMX soft body pin vertex index is out of range");
+            }
+            body.pinned_vertices.push_back(vertex_index);
         }
+        model.soft_bodies.push_back(std::move(body));
     }
 }
 
@@ -619,7 +659,7 @@ Model parse_model(Reader& reader, const Limits& limits) {
         model.joints.push_back(std::move(joint));
     }
 
-    skip_soft_bodies(reader, model.header, limits);
+    read_soft_bodies(reader, limits, model);
     if (reader.remaining() != 0) reader.fail("PMX contains trailing data");
     return model;
 }

@@ -99,7 +99,16 @@ float AnimationController::transition_weight() const noexcept {
 
 bool AnimationController::uses(const MotionClip& motion) const noexcept { return motion_ == &motion; }
 
-ModelInstance::ModelInstance(const std::span<const pmx::Bone> bones) : animation_(bones) {}
+ModelInstance::ModelInstance(
+    const std::span<const pmx::Bone> bones,
+    const pack::PhysicsAssets& assets,
+    const std::optional<ModelPhysicsConfig>& physics_config) : animation_(bones) {
+    if (physics_config.has_value()) {
+        physics_ = std::make_unique<ModelPhysics>(bones, assets, *physics_config);
+        physics_pose_.emplace(bones);
+        reset_physics();
+    }
+}
 
 bool ModelInstance::set_transform(const InstanceTransform transform) noexcept {
     if (!finite(transform.position) || !finite(transform.rotation) || !finite(transform.scale) ||
@@ -122,19 +131,36 @@ bool ModelInstance::set_transform(const InstanceTransform transform) noexcept {
 }
 
 void ModelInstance::set_visible(const bool visible) noexcept { visible_ = visible; }
+
+bool ModelInstance::update(const float delta_seconds) {
+    if (!animation_.update(delta_seconds)) throw std::invalid_argument("scene animation update failed");
+    return physics_ != nullptr && physics_->update(delta_seconds, animation_.pose(), *physics_pose_);
+}
+
+void ModelInstance::reset_physics() {
+    if (physics_ == nullptr) throw std::invalid_argument("model instance physics is not enabled");
+    physics_->reset(animation_.pose());
+    *physics_pose_ = animation_.pose();
+}
+
 const InstanceTransform& ModelInstance::transform() const noexcept { return transform_; }
 bool ModelInstance::visible() const noexcept { return visible_; }
 AnimationController& ModelInstance::animation() noexcept { return animation_; }
 const AnimationController& ModelInstance::animation() const noexcept { return animation_; }
+const Pose& ModelInstance::pose() const noexcept {
+    return physics_pose_.has_value() ? *physics_pose_ : animation_.pose();
+}
 
-Scene::Scene(const float maximum_delta_seconds) : maximum_delta_seconds_(maximum_delta_seconds) {
+Scene::Scene(const float maximum_delta_seconds, std::optional<ModelPhysicsConfig> physics_config)
+    : maximum_delta_seconds_(maximum_delta_seconds), physics_config_(std::move(physics_config)) {
     if (!std::isfinite(maximum_delta_seconds) || maximum_delta_seconds <= 0.0f) {
         throw std::invalid_argument("scene maximum delta must be finite and positive");
     }
+    if (physics_config_.has_value()) validate_model_physics_config(*physics_config_);
 }
 
-ModelInstance& Scene::create_instance(const std::span<const pmx::Bone> bones) {
-    auto instance = std::make_unique<ModelInstance>(bones);
+ModelInstance& Scene::create_instance(const std::span<const pmx::Bone> bones, const pack::PhysicsAssets& assets) {
+    auto instance = std::make_unique<ModelInstance>(bones, assets, physics_config_);
     auto& result = *instance;
     instances_.push_back(std::move(instance));
     return result;
@@ -149,11 +175,11 @@ SceneStep Scene::update(const float delta_seconds) {
         throw std::invalid_argument("scene delta must be finite and non-negative");
     }
     const auto resolved_delta = std::min(delta_seconds, maximum_delta_seconds_);
+    bool dropped_time = resolved_delta != delta_seconds;
     std::uint32_t animated = 0;
     for (const auto& instance : instances_) {
-        if (!instance->animation().update(resolved_delta)) {
-            throw std::invalid_argument("scene animation update failed");
-        }
+        const auto physics_dropped_time = instance->update(resolved_delta);
+        dropped_time = dropped_time || physics_dropped_time;
         if (instance->animation().playing()) ++animated;
     }
     total_seconds_ += resolved_delta;
@@ -162,7 +188,7 @@ SceneStep Scene::update(const float delta_seconds) {
         .frame_index = frame_index_,
         .instance_count = static_cast<std::uint32_t>(instances_.size()),
         .animated_instance_count = animated,
-        .dropped_time = resolved_delta != delta_seconds,
+        .dropped_time = dropped_time,
         .delta_seconds = resolved_delta,
         .total_seconds = total_seconds_,
     };

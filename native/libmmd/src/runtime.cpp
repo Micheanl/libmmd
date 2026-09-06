@@ -2,6 +2,7 @@
 
 #include "native/libmmd/src/mmdpack.hpp"
 #include "native/libmmd/src/motion.hpp"
+#include "native/libmmd/src/pack_physics.hpp"
 #include "native/libmmd/src/physics.hpp"
 #include "native/libmmd/src/pose.hpp"
 #include "native/libmmd/src/render_mesh.hpp"
@@ -75,6 +76,7 @@ struct libmmd_model {
     libmmd::RenderMesh render_mesh;
     libmmd::pack::RenderAssets render_assets;
     std::vector<libmmd::pmx::Bone> bones;
+    libmmd::pack::PhysicsAssets physics_assets;
     std::optional<libmmd::pmx::Model> source;
     std::unordered_set<libmmd_model_instance*> instances;
 };
@@ -191,6 +193,35 @@ libmmd_physics_world_config default_physics_config(const libmmd_runtime& runtime
     };
 }
 
+libmmd_status create_scene(
+    libmmd_runtime* runtime,
+    const libmmd_scene_config* config,
+    std::optional<libmmd::ModelPhysicsConfig> physics_config,
+    libmmd_scene** output) {
+    if (runtime == nullptr || output == nullptr) return LIBMMD_STATUS_INVALID_ARGUMENT;
+    *output = nullptr;
+    auto resolved = default_scene_config();
+    if (config != nullptr) {
+        if (config->struct_size < sizeof(libmmd_scene_config)) {
+            runtime->value.set_error("scene config is truncated");
+            return LIBMMD_STATUS_INVALID_ARGUMENT;
+        }
+        if (config->abi_version != LIBMMD_ABI_VERSION) return LIBMMD_STATUS_UNSUPPORTED_ABI;
+        resolved = *config;
+    }
+    if (resolved.flags != 0) {
+        runtime->value.set_error("scene flags are unsupported");
+        return LIBMMD_STATUS_UNSUPPORTED_FEATURE;
+    }
+    return scene_call(runtime, [&] {
+        auto scene = std::make_unique<libmmd_scene>();
+        scene->runtime = runtime;
+        scene->value = std::make_unique<libmmd::Scene>(resolved.maximum_delta_seconds, physics_config);
+        runtime->scenes.insert(scene.get());
+        *output = scene.release();
+    });
+}
+
 }
 
 extern "C" {
@@ -289,10 +320,17 @@ libmmd_status libmmd_model_load_pack(
             runtime->value.set_error(*error);
             return LIBMMD_STATUS_INVALID_DATA;
         }
-        const auto skeleton_result = libmmd::read_skeleton(input, layout);
+        std::size_t morph_offset = 0;
+        auto skeleton_result = libmmd::read_skeleton(input, layout, &morph_offset);
         if (const auto* error = std::get_if<libmmd::pack::Error>(&skeleton_result)) {
             runtime->value.set_error(
                 "mmdpack skeleton error at byte " + std::to_string(error->offset) + ": " + error->message);
+            return LIBMMD_STATUS_INVALID_DATA;
+        }
+        auto physics_result = libmmd::pack::read_physics_assets(input, layout, {}, morph_offset);
+        if (const auto* error = std::get_if<libmmd::pack::Error>(&physics_result)) {
+            runtime->value.set_error(
+                "mmdpack physics error at byte " + std::to_string(error->offset) + ": " + error->message);
             return LIBMMD_STATUS_INVALID_DATA;
         }
         const auto asset_result = libmmd::pack::read_render_assets(input, layout);
@@ -308,6 +346,7 @@ libmmd_status libmmd_model_load_pack(
             std::get<libmmd::RenderMesh>(std::move(render_result)),
             std::get<libmmd::pack::RenderAssets>(std::move(asset_result)),
             std::get<std::vector<libmmd::pmx::Bone>>(std::move(skeleton_result)),
+            std::get<libmmd::pack::PhysicsAssets>(std::move(physics_result)),
             std::nullopt,
             {},
         };
@@ -715,28 +754,30 @@ libmmd_status libmmd_scene_create(
     libmmd_runtime* runtime,
     const libmmd_scene_config* config,
     libmmd_scene** output) {
+    return create_scene(runtime, config, std::nullopt, output);
+}
+
+libmmd_status libmmd_scene_create_with_physics(
+    libmmd_runtime* runtime,
+    const libmmd_scene_config* config,
+    const libmmd_model_physics_config* physics_config,
+    libmmd_scene** output) {
     if (runtime == nullptr || output == nullptr) return LIBMMD_STATUS_INVALID_ARGUMENT;
     *output = nullptr;
-    auto resolved = default_scene_config();
-    if (config != nullptr) {
-        if (config->struct_size < sizeof(libmmd_scene_config)) {
-            runtime->value.set_error("scene config is truncated");
+    libmmd::ModelPhysicsConfig resolved;
+    if (physics_config != nullptr) {
+        if (physics_config->struct_size < sizeof(libmmd_model_physics_config)) {
+            runtime->value.set_error("model physics config is truncated");
             return LIBMMD_STATUS_INVALID_ARGUMENT;
         }
-        if (config->abi_version != LIBMMD_ABI_VERSION) return LIBMMD_STATUS_UNSUPPORTED_ABI;
-        resolved = *config;
+        if (physics_config->abi_version != LIBMMD_ABI_VERSION) return LIBMMD_STATUS_UNSUPPORTED_ABI;
+        resolved.gravity = {physics_config->gravity[0], physics_config->gravity[1], physics_config->gravity[2]};
+        resolved.meters_per_unit = physics_config->meters_per_unit;
+        resolved.fixed_step_seconds = physics_config->fixed_step_seconds;
+        resolved.maximum_substeps = physics_config->maximum_substeps;
+        resolved.solver_iterations = physics_config->solver_iterations;
     }
-    if (resolved.flags != 0) {
-        runtime->value.set_error("scene flags are unsupported");
-        return LIBMMD_STATUS_UNSUPPORTED_FEATURE;
-    }
-    return scene_call(runtime, [&] {
-        auto scene = std::make_unique<libmmd_scene>();
-        scene->runtime = runtime;
-        scene->value = std::make_unique<libmmd::Scene>(resolved.maximum_delta_seconds);
-        *output = scene.release();
-        runtime->scenes.insert(*output);
-    });
+    return create_scene(runtime, config, resolved, output);
 }
 
 void libmmd_scene_destroy(libmmd_scene* scene) {
@@ -786,10 +827,17 @@ libmmd_status libmmd_model_instance_create(
         instance->scene = scene;
         instance->model = model;
         instance->motion = nullptr;
-        instance->value = &scene->value->create_instance(model->bones);
+        instance->value = &scene->value->create_instance(model->bones, model->physics_assets);
+        try {
+            scene->instances.insert(instance.get());
+            model->instances.insert(instance.get());
+        } catch (...) {
+            scene->instances.erase(instance.get());
+            model->instances.erase(instance.get());
+            scene->value->destroy_instance(*instance->value);
+            throw;
+        }
         *output = instance.release();
-        scene->instances.insert(*output);
-        model->instances.insert(*output);
     });
 }
 
@@ -800,6 +848,11 @@ void libmmd_model_instance_destroy(libmmd_model_instance* instance) {
     instance->scene->instances.erase(instance);
     instance->scene->value->destroy_instance(*instance->value);
     delete instance;
+}
+
+libmmd_status libmmd_model_instance_reset_physics(libmmd_model_instance* instance) {
+    if (instance == nullptr) return LIBMMD_STATUS_INVALID_ARGUMENT;
+    return scene_call(instance->scene->runtime, [&] { instance->value->reset_physics(); });
 }
 
 libmmd_status libmmd_model_instance_set_transform(
@@ -898,14 +951,14 @@ libmmd_status libmmd_model_instance_get_matrices(
         return LIBMMD_STATUS_INVALID_ARGUMENT;
     }
     if (output->abi_version != LIBMMD_ABI_VERSION) return LIBMMD_STATUS_UNSUPPORTED_ABI;
-    const auto matrices = instance->value->animation().pose().skinning_matrices();
+    const auto matrices = instance->value->pose().skinning_matrices();
     const auto size = output->struct_size;
     std::memset(output, 0, sizeof(libmmd_matrix_view));
     output->abi_version = LIBMMD_ABI_VERSION;
     output->struct_size = size;
     output->data = matrices.data();
     output->float_count = matrices.size();
-    output->bone_count = instance->value->animation().pose().bone_count();
+    output->bone_count = instance->value->pose().bone_count();
     output->matrix_stride = 16;
     return LIBMMD_STATUS_OK;
 }
@@ -920,7 +973,7 @@ libmmd_status libmmd_model_instance_get_render_packet(
     const auto size = output->struct_size;
     const auto& mesh = instance->model->render_mesh;
     const auto& transform = instance->value->transform();
-    const auto matrices = instance->value->animation().pose().skinning_matrices();
+    const auto matrices = instance->value->pose().skinning_matrices();
     std::memset(output, 0, sizeof(libmmd_render_packet));
     output->abi_version = LIBMMD_ABI_VERSION;
     output->struct_size = size;
@@ -949,7 +1002,7 @@ libmmd_status libmmd_model_instance_get_render_packet(
     output->index_stride = mesh.index_stride;
     output->matrix_data = matrices.data();
     output->matrix_float_count = matrices.size();
-    output->bone_count = instance->value->animation().pose().bone_count();
+    output->bone_count = instance->value->pose().bone_count();
     output->matrix_stride = 16;
     output->draw_count = static_cast<std::uint32_t>(instance->model->render_assets.materials.size());
     return LIBMMD_STATUS_OK;

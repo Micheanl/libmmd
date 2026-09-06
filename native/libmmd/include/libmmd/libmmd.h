@@ -186,6 +186,16 @@ typedef struct libmmd_scene_config {
     uint32_t flags;
 } libmmd_scene_config;
 
+typedef struct libmmd_model_physics_config {
+    uint32_t abi_version;
+    uint32_t struct_size;
+    float gravity[3];
+    float meters_per_unit;
+    float fixed_step_seconds;
+    uint32_t maximum_substeps;
+    uint32_t solver_iterations;
+} libmmd_model_physics_config;
+
 typedef struct libmmd_instance_transform {
     float position[3];
     float rotation[4];
@@ -451,6 +461,11 @@ LIBMMD_API libmmd_status libmmd_scene_create(
     const libmmd_scene_config* config,
     libmmd_scene** output);
 LIBMMD_API void libmmd_scene_destroy(libmmd_scene* scene);
+LIBMMD_API libmmd_status libmmd_scene_create_with_physics(
+    libmmd_runtime* runtime,
+    const libmmd_scene_config* config,
+    const libmmd_model_physics_config* physics_config,
+    libmmd_scene** output);
 LIBMMD_API libmmd_status libmmd_scene_update(
     libmmd_scene* scene,
     float delta_seconds,
@@ -460,6 +475,7 @@ LIBMMD_API libmmd_status libmmd_model_instance_create(
     libmmd_model* model,
     libmmd_model_instance** output);
 LIBMMD_API void libmmd_model_instance_destroy(libmmd_model_instance* instance);
+LIBMMD_API libmmd_status libmmd_model_instance_reset_physics(libmmd_model_instance* instance);
 LIBMMD_API libmmd_status libmmd_model_instance_set_transform(
     libmmd_model_instance* instance,
     const libmmd_instance_transform* transform);

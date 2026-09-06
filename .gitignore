@@ -29,4 +29,6 @@ hs_err_*.log
 replay_*.log
 *.hprof
 *.jfr
+/docs/
+/test_mmd_model/
 __pycache__/

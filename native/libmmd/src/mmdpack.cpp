@@ -19,7 +19,8 @@ constexpr std::array magic{
     std::byte{'M'}, std::byte{'M'}, std::byte{'D'}, std::byte{'P'},
     std::byte{'A'}, std::byte{'C'}, std::byte{'K'}, std::byte{0},
 };
-constexpr std::uint32_t header_size = 72;
+constexpr std::uint32_t legacy_header_size = 72;
+constexpr std::uint32_t header_size = 76;
 constexpr std::uint32_t vertex_stride = 68;
 constexpr std::uint32_t index_stride = 4;
 constexpr std::uint64_t fnv_offset = 14695981039346656037ull;
@@ -144,6 +145,7 @@ std::vector<std::byte> build(const pmx::Model& model, const std::span<const std:
     append(output, static_cast<std::uint32_t>(model.morphs.size()));
     append(output, static_cast<std::uint32_t>(model.rigid_bodies.size()));
     append(output, static_cast<std::uint32_t>(model.joints.size()));
+    append(output, static_cast<std::uint32_t>(model.soft_bodies.size()));
 
     append_string(output, model.name);
     append_string(output, model.english_name);
@@ -286,6 +288,32 @@ std::vector<std::byte> build(const pmx::Model& model, const std::span<const std:
         append(output, joint.translation_spring);
         append(output, joint.rotation_spring);
     }
+    for (const auto& body : model.soft_bodies) {
+        append_string(output, body.name);
+        append_string(output, body.english_name);
+        append(output, body.shape);
+        append(output, body.material_index);
+        append(output, body.collision_group);
+        append(output, body.collision_mask);
+        append(output, body.flags);
+        append(output, body.link_distance);
+        append(output, body.cluster_count);
+        append(output, body.mass);
+        append(output, body.collision_margin);
+        append(output, body.aero_model);
+        append(output, body.configuration);
+        append(output, body.cluster_configuration);
+        append(output, body.solver_iterations);
+        append(output, body.material_coefficients);
+        append(output, static_cast<std::uint32_t>(body.anchors.size()));
+        for (const auto& anchor : body.anchors) {
+            append(output, anchor.rigid_body_index);
+            append(output, anchor.vertex_index);
+            append_bool(output, anchor.near_mode);
+        }
+        append(output, static_cast<std::uint32_t>(body.pinned_vertices.size()));
+        for (const auto vertex : body.pinned_vertices) append(output, vertex);
+    }
 
     overwrite(output, 24, hash(std::span(output).subspan(header_size)));
     overwrite(output, 32, output.size());
@@ -314,16 +342,20 @@ LayoutResult inspect_layout(const std::span<const std::byte> bytes) {
         !reader.read(info.joint_count)) {
         return Error{reader.position(), "mmdpack header is truncated"};
     }
-    if (info.version != format_version) {
+    if (info.version != 2 && info.version != format_version) {
         return Error{8, "mmdpack version is unsupported"};
     }
-    if (stored_header_size != header_size) {
+    const auto expected_header_size = info.version == 2 ? legacy_header_size : header_size;
+    if (stored_header_size != expected_header_size) {
         return Error{12, "mmdpack header size is invalid"};
+    }
+    if (info.version == format_version && !reader.read(info.soft_body_count)) {
+        return Error{reader.position(), "mmdpack header is truncated"};
     }
     if (info.total_size != bytes.size()) {
         return Error{32, "mmdpack file size does not match its header"};
     }
-    if (hash(bytes.subspan(header_size)) != info.payload_hash) {
+    if (hash(bytes.subspan(stored_header_size)) != info.payload_hash) {
         return Error{24, "mmdpack payload checksum is invalid"};
     }
     for (std::uint32_t index = 0; index < 2; ++index) {

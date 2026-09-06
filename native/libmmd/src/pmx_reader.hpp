@@ -171,6 +171,8 @@ struct RigidBody {
     float restitution = 0.0f;
     float friction = 0.0f;
     std::uint8_t mode = 0;
+
+    bool operator==(const RigidBody&) const = default;
 };
 
 struct Joint {
@@ -187,6 +189,39 @@ struct Joint {
     std::array<float, 3> rotation_upper_limit{};
     std::array<float, 3> translation_spring{};
     std::array<float, 3> rotation_spring{};
+
+    bool operator==(const Joint&) const = default;
+};
+
+struct SoftBodyAnchor {
+    std::int32_t rigid_body_index = -1;
+    std::uint32_t vertex_index = 0;
+    bool near_mode = false;
+
+    bool operator==(const SoftBodyAnchor&) const = default;
+};
+
+struct SoftBody {
+    std::string name;
+    std::string english_name;
+    std::uint8_t shape = 0;
+    std::int32_t material_index = -1;
+    std::uint8_t collision_group = 0;
+    std::uint16_t collision_mask = 0;
+    std::uint8_t flags = 0;
+    std::int32_t link_distance = 0;
+    std::int32_t cluster_count = 0;
+    float mass = 0.0f;
+    float collision_margin = 0.0f;
+    std::int32_t aero_model = 0;
+    std::array<float, 12> configuration{};
+    std::array<float, 6> cluster_configuration{};
+    std::array<std::int32_t, 4> solver_iterations{};
+    std::array<float, 3> material_coefficients{};
+    std::vector<SoftBodyAnchor> anchors;
+    std::vector<std::uint32_t> pinned_vertices;
+
+    bool operator==(const SoftBody&) const = default;
 };
 
 struct Model {
@@ -203,6 +238,7 @@ struct Model {
     std::vector<Morph> morphs;
     std::vector<RigidBody> rigid_bodies;
     std::vector<Joint> joints;
+    std::vector<SoftBody> soft_bodies;
 };
 
 using HeaderResult = std::variant<Header, ParseError>;

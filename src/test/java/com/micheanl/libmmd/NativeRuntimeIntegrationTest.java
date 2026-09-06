@@ -5,17 +5,128 @@ import com.micheanl.libmmd.runtime.PhysicsRuntime;
 import com.micheanl.libmmd.runtime.SceneRuntime;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.zip.ZipInputStream;
 
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 final class NativeRuntimeIntegrationTest {
+    @Test
+    void simulatesModelPhysicsThroughFfm(@TempDir Path directory) throws IOException {
+        var pmx = directory.resolve("dynamic-sphere.pmx");
+        Files.write(pmx, dynamicSpherePmx());
+        try (var runtime = NativeRuntime.open(1);
+             var model = runtime.loadPmx(pmx);
+             var animatedScene = runtime.scenes().create();
+             var physicalScene = runtime.scenes().create(0.25f, SceneRuntime.PhysicsConfig.defaults());
+             var animatedInstance = animatedScene.createInstance(model);
+             var physicalInstance = physicalScene.createInstance(model)) {
+            assertEquals(1, model.info().rigidBodyCount());
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> runtime.scenes().create(0.0f, SceneRuntime.PhysicsConfig.defaults())
+            );
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> runtime.scenes().create(Float.NaN, SceneRuntime.PhysicsConfig.defaults())
+            );
+            assertThrows(NullPointerException.class, () -> runtime.scenes().create(0.25f, null));
+            var matrices = physicalInstance.matrices();
+            var packet = physicalInstance.renderPacket();
+            var restMatrices = matrices.data().toArray(JAVA_FLOAT);
+            assertEquals(1, matrices.boneCount());
+            assertEquals(16, matrices.matrixStride());
+            assertEquals(3, packet.vertexCount());
+            assertArrayEquals(restMatrices, animatedInstance.matrices().data().toArray(JAVA_FLOAT), 0.0001f);
+
+            for (var frame = 0; frame < 30; frame++) {
+                animatedScene.update(1.0f / 60.0f);
+                physicalScene.update(1.0f / 60.0f);
+            }
+            var fallenMatrices = matrices.data().toArray(JAVA_FLOAT);
+            assertTrue(fallenMatrices[13] < -10.0f && fallenMatrices[13] > -20.0f);
+            assertEquals(0.0f, fallenMatrices[12], 0.0001f);
+            assertEquals(0.0f, fallenMatrices[14], 0.0001f);
+            assertArrayEquals(fallenMatrices, packet.matrices().toArray(JAVA_FLOAT), 0.0001f);
+            assertArrayEquals(restMatrices, animatedInstance.matrices().data().toArray(JAVA_FLOAT), 0.0001f);
+
+            physicalInstance.resetPhysics();
+            assertArrayEquals(restMatrices, matrices.data().toArray(JAVA_FLOAT), 0.0001f);
+            assertArrayEquals(restMatrices, physicalInstance.renderPacket().matrices().toArray(JAVA_FLOAT), 0.0001f);
+            physicalInstance.setVisible(false);
+            for (var frame = 0; frame < 30; frame++) physicalScene.update(1.0f / 60.0f);
+            assertFalse(physicalInstance.state().visible());
+            var hiddenPacket = physicalInstance.renderPacket();
+            assertFalse(hiddenPacket.visible());
+            assertTrue(matrices.data().getAtIndex(JAVA_FLOAT, 13) < -10.0f);
+            assertArrayEquals(matrices.data().toArray(JAVA_FLOAT), hiddenPacket.matrices().toArray(JAVA_FLOAT), 0.0001f);
+
+            physicalScene.close();
+            assertTrue(physicalInstance.isClosed());
+            assertThrows(IllegalStateException.class, physicalInstance::resetPhysics);
+            assertThrows(IllegalStateException.class, matrices::data);
+            assertThrows(IllegalStateException.class, packet::matrices);
+            assertThrows(IllegalStateException.class, hiddenPacket::vertices);
+        }
+    }
+
+    @Test
+    void rejectsInvalidModelPhysicsConfiguration() {
+        var defaults = SceneRuntime.PhysicsConfig.defaults();
+        assertEquals(new NativeRuntime.Vector3(0.0f, -9.81f, 0.0f), defaults.gravity());
+        assertEquals(0.08f, defaults.metersPerUnit());
+        assertEquals(1.0f / 120.0f, defaults.fixedStepSeconds());
+        assertEquals(8, defaults.maximumSubsteps());
+        assertEquals(10, defaults.solverIterations());
+        assertThrows(NullPointerException.class, () -> new SceneRuntime.PhysicsConfig(null, 0.08f, 0.01f, 8, 10));
+        for (var invalid : new float[] {Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY}) {
+            for (var gravity : new NativeRuntime.Vector3[] {
+                new NativeRuntime.Vector3(invalid, 0.0f, 0.0f),
+                new NativeRuntime.Vector3(0.0f, invalid, 0.0f),
+                new NativeRuntime.Vector3(0.0f, 0.0f, invalid)
+            }) {
+                assertThrows(
+                    IllegalArgumentException.class,
+                    () -> new SceneRuntime.PhysicsConfig(gravity, 0.08f, 0.01f, 8, 10)
+                );
+            }
+        }
+        for (var invalid : new float[] {0.0f, -1.0f, Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY}) {
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> new SceneRuntime.PhysicsConfig(defaults.gravity(), invalid, 0.01f, 8, 10)
+            );
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> new SceneRuntime.PhysicsConfig(defaults.gravity(), 0.08f, invalid, 8, 10)
+            );
+        }
+        for (var invalid : new int[] {0, -1}) {
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> new SceneRuntime.PhysicsConfig(defaults.gravity(), 0.08f, 0.01f, invalid, 10)
+            );
+            assertThrows(
+                IllegalArgumentException.class,
+                () -> new SceneRuntime.PhysicsConfig(defaults.gravity(), 0.08f, 0.01f, 8, invalid)
+            );
+        }
+    }
+
     @Test
     void simulatesPhysicsThroughFfm() {
         try (var runtime = NativeRuntime.open(2);
@@ -235,6 +346,61 @@ final class NativeRuntimeIntegrationTest {
                 sourceModel.close();
             }
         }
+    }
+
+    private static byte[] dynamicSpherePmx() {
+        var pmx = ByteBuffer.allocate(1024).order(ByteOrder.LITTLE_ENDIAN);
+        pmx.put(new byte[] {'P', 'M', 'X', ' '}).putFloat(2.0f);
+        pmx.put(new byte[] {8, 1, 0, 1, 1, 1, 1, 1, 1});
+        putText(pmx, "dynamic-sphere");
+        putText(pmx, "");
+        putText(pmx, "");
+        putText(pmx, "");
+        pmx.putInt(3);
+        for (var position : new float[][] {{0.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}}) {
+            putFloats(pmx, position);
+            putFloats(pmx, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f);
+            pmx.put((byte) 0).put((byte) 0).putFloat(1.0f);
+        }
+        pmx.putInt(3).put(new byte[] {0, 1, 2});
+        pmx.putInt(0);
+        pmx.putInt(1);
+        putText(pmx, "material");
+        putText(pmx, "");
+        putFloats(pmx, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f);
+        pmx.put((byte) 0);
+        putFloats(pmx, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f);
+        pmx.put(new byte[] {-1, -1, 0, 1, 0});
+        putText(pmx, "");
+        pmx.putInt(3);
+        pmx.putInt(1);
+        putText(pmx, "root");
+        putText(pmx, "");
+        putFloats(pmx, 0.0f, 0.0f, 0.0f);
+        pmx.put((byte) -1).putInt(0).putShort((short) 0);
+        putFloats(pmx, 0.0f, 1.0f, 0.0f);
+        pmx.putInt(0);
+        pmx.putInt(0);
+        pmx.putInt(1);
+        putText(pmx, "sphere");
+        putText(pmx, "");
+        pmx.put((byte) 0).put((byte) 0).putShort((short) 0).put((byte) 0);
+        putFloats(pmx, 0.5f, 0.0f, 0.0f);
+        putFloats(pmx, 0.0f, 3.0f, 0.0f);
+        putFloats(pmx, 0.0f, 0.0f, 0.0f);
+        putFloats(pmx, 1.0f, 0.0f, 0.0f, 0.0f, 0.5f);
+        pmx.put((byte) 1);
+        pmx.putInt(0);
+        return Arrays.copyOf(pmx.array(), pmx.position());
+    }
+
+    private static void putText(ByteBuffer pmx, String text) {
+        var bytes = text.getBytes(StandardCharsets.UTF_8);
+        pmx.putInt(bytes.length).put(bytes);
+    }
+
+    private static void putFloats(ByteBuffer pmx, float... values) {
+        for (var value : values) pmx.putFloat(value);
     }
 
     private static byte[] defaultMotion(String name) {

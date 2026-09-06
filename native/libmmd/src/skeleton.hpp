@@ -15,7 +15,8 @@ using SkeletonResult = std::variant<std::vector<pmx::Bone>, pack::Error>;
 
 [[nodiscard]] SkeletonResult read_skeleton(
     std::span<const std::byte> bytes,
-    const pack::Layout& layout);
+    const pack::Layout& layout,
+    std::size_t* end_offset = nullptr);
 
 }
 

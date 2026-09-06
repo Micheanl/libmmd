@@ -24,6 +24,17 @@ struct Quaternion {
     float w = 1.0f;
 };
 
+struct BoneTransform {
+    Vector3 position;
+    Quaternion rotation;
+};
+
+struct BonePhysicsOverride {
+    std::uint32_t bone_index;
+    BoneTransform transform;
+    bool rotation_only = false;
+};
+
 class Pose final {
 public:
     explicit Pose(std::span<const pmx::Bone> bones);
@@ -36,6 +47,8 @@ public:
     [[nodiscard]] bool set_ik_enabled(std::uint32_t bone_index, bool enabled) noexcept;
     [[nodiscard]] bool blend(const Pose& from, const Pose& to, float weight) noexcept;
     void evaluate() noexcept;
+    [[nodiscard]] bool global_transform(std::uint32_t bone_index, BoneTransform& output) const noexcept;
+    [[nodiscard]] bool apply_physics(std::span<const BonePhysicsOverride> overrides) noexcept;
 
     [[nodiscard]] std::uint32_t bone_count() const noexcept;
     [[nodiscard]] std::span<const float> skinning_matrices() const noexcept;
@@ -67,6 +80,8 @@ private:
     std::vector<Quaternion> effective_rotations_;
     std::vector<Vector3> global_positions_;
     std::vector<Quaternion> global_rotations_;
+    std::vector<std::size_t> physics_override_indices_;
+    std::vector<BoneTransform> physics_transforms_;
     std::vector<float> skinning_matrices_;
 
     void evaluate_hierarchy() noexcept;

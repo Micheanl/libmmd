@@ -236,6 +236,8 @@ Pose::Pose(const std::span<const pmx::Bone> bones) {
     effective_rotations_.resize(bones_.size());
     global_positions_.resize(bones_.size());
     global_rotations_.resize(bones_.size());
+    physics_override_indices_.resize(bones_.size());
+    physics_transforms_.resize(bones_.size());
     skinning_matrices_.resize(bones_.size() * 16);
     reset();
 }
@@ -391,6 +393,69 @@ void Pose::evaluate() noexcept {
         if (ik_enabled_[index]) solve_ik(bones_[index], index);
     }
     write_matrices();
+}
+
+bool Pose::global_transform(const std::uint32_t bone_index, BoneTransform& output) const noexcept {
+    if (bone_index >= bones_.size()) return false;
+    output = {global_positions_[bone_index], global_rotations_[bone_index]};
+    return true;
+}
+
+bool Pose::apply_physics(const std::span<const BonePhysicsOverride> overrides) noexcept {
+    std::fill(physics_override_indices_.begin(), physics_override_indices_.end(), overrides.size());
+    for (std::size_t override_index = 0; override_index < overrides.size(); ++override_index) {
+        const auto& physics_override = overrides[override_index];
+        const auto index = physics_override.bone_index;
+        const auto& transform = physics_override.transform;
+        if (index >= bones_.size() || physics_override_indices_[index] != overrides.size() ||
+            !finite(transform.position) || !finite(transform.rotation)) {
+            return false;
+        }
+        const auto& rotation = transform.rotation;
+        const auto length_squared = static_cast<double>(rotation.x) * rotation.x +
+            static_cast<double>(rotation.y) * rotation.y + static_cast<double>(rotation.z) * rotation.z +
+            static_cast<double>(rotation.w) * rotation.w;
+        if (length_squared == 0.0) return false;
+        const auto inverse = 1.0 / std::sqrt(length_squared);
+        physics_override_indices_[index] = override_index;
+        physics_transforms_[index] = {transform.position, {
+            static_cast<float>(rotation.x * inverse),
+            static_cast<float>(rotation.y * inverse),
+            static_cast<float>(rotation.z * inverse),
+            static_cast<float>(rotation.w * inverse),
+        }};
+    }
+
+    for (const auto index : evaluation_order_) {
+        const auto& bone = bones_[index];
+        const auto override_index = physics_override_indices_[index];
+        const auto is_animated = override_index == overrides.size();
+        auto& transform = physics_transforms_[index];
+        if (is_animated || overrides[override_index].rotation_only) {
+            const auto local_position = bone.bind_translation + effective_translations_[index];
+            if (bone.parent_index < 0) {
+                transform.position = local_position;
+                if (is_animated) transform.rotation = effective_rotations_[index];
+            } else {
+                const auto& parent = physics_transforms_[static_cast<std::uint32_t>(bone.parent_index)];
+                transform.position = parent.position + rotate(parent.rotation, local_position);
+                if (is_animated) {
+                    transform.rotation = normalized(parent.rotation * effective_rotations_[index]);
+                }
+            }
+        }
+        if (!finite(transform.position) || !finite(transform.rotation) ||
+            !finite(transform.position - rotate(transform.rotation, bone.bind_position))) {
+            return false;
+        }
+    }
+
+    for (std::size_t index = 0; index < bones_.size(); ++index) {
+        global_positions_[index] = physics_transforms_[index].position;
+        global_rotations_[index] = physics_transforms_[index].rotation;
+    }
+    write_matrices();
+    return true;
 }
 
 std::uint32_t Pose::bone_count() const noexcept {

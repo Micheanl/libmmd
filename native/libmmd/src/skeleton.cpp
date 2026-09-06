@@ -144,7 +144,10 @@ bool valid_index(const std::int32_t index, const std::uint32_t count) {
 
 }
 
-SkeletonResult read_skeleton(const std::span<const std::byte> bytes, const pack::Layout& layout) {
+SkeletonResult read_skeleton(
+    const std::span<const std::byte> bytes,
+    const pack::Layout& layout,
+    std::size_t* const end_offset) {
     try {
         Reader reader(bytes, layout.indices.offset + layout.indices.size);
         skip_to_bones(reader, layout.info);
@@ -167,6 +170,7 @@ SkeletonResult read_skeleton(const std::span<const std::byte> bytes, const pack:
                 }
             }
         }
+        if (end_offset != nullptr) *end_offset = reader.position();
         return bones;
     } catch (const Failure& failure) {
         return pack::Error{failure.offset, failure.what()};

@@ -1,4 +1,5 @@
 #include "native/libmmd/src/mmdpack.hpp"
+#include "native/libmmd/src/pack_physics.hpp"
 #include "native/libmmd/src/pmx_reader.hpp"
 #include "native/libmmd/src/pose.hpp"
 #include "native/libmmd/src/render_mesh.hpp"
@@ -121,7 +122,8 @@ void inspect_pmx(const std::filesystem::path& path) {
               << "bones=" << model.bones.size() << '\n'
               << "morphs=" << model.morphs.size() << '\n'
               << "rigid_bodies=" << model.rigid_bodies.size() << '\n'
-              << "joints=" << model.joints.size() << '\n';
+              << "joints=" << model.joints.size() << '\n'
+              << "soft_bodies=" << model.soft_bodies.size() << '\n';
 }
 
 void inspect_vmd(const std::filesystem::path& path) {
@@ -158,12 +160,18 @@ void inspect_pack(const std::filesystem::path& path) {
         throw std::runtime_error("render mesh error: " + *error);
     }
     const auto& render_mesh = std::get<libmmd::RenderMesh>(render_result);
-    const auto skeleton_result = libmmd::read_skeleton(source, layout);
+    std::size_t morph_offset = 0;
+    const auto skeleton_result = libmmd::read_skeleton(source, layout, &morph_offset);
     if (const auto* error = std::get_if<libmmd::pack::Error>(&skeleton_result)) {
         throw std::runtime_error(
             "skeleton error at byte " + std::to_string(error->offset) + ": " + error->message);
     }
     const auto& bones = std::get<std::vector<libmmd::pmx::Bone>>(skeleton_result);
+    const auto physics_result = libmmd::pack::read_physics_assets(source, layout, {}, morph_offset);
+    if (const auto* error = std::get_if<libmmd::pack::Error>(&physics_result)) {
+        throw std::runtime_error(
+            "physics error at byte " + std::to_string(error->offset) + ": " + error->message);
+    }
     std::size_t ik_constraints = 0;
     std::size_t ik_links = 0;
     for (const auto& bone : bones) {
@@ -187,6 +195,7 @@ void inspect_pack(const std::filesystem::path& path) {
               << "morphs=" << info.morph_count << '\n'
               << "rigid_bodies=" << info.rigid_body_count << '\n'
               << "joints=" << info.joint_count << '\n'
+              << "soft_bodies=" << info.soft_body_count << '\n'
               << "render_vertex_bytes=" << render_mesh.vertices.size() << '\n'
               << "render_skinning_bytes=" << render_mesh.skinning.size() << '\n'
               << "render_index_stride=" << render_mesh.index_stride << '\n'
