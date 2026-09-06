@@ -72,6 +72,7 @@ struct libmmd_model {
     std::vector<std::byte> bytes;
     libmmd::pack::Layout layout;
     libmmd::RenderMesh render_mesh;
+    libmmd::pack::RenderAssets render_assets;
     std::vector<libmmd::pmx::Bone> bones;
     std::optional<libmmd::pmx::Model> source;
     std::unordered_set<libmmd_model_instance*> instances;
@@ -293,11 +294,18 @@ libmmd_status libmmd_model_load_pack(
                 "mmdpack skeleton error at byte " + std::to_string(error->offset) + ": " + error->message);
             return LIBMMD_STATUS_INVALID_DATA;
         }
+        const auto asset_result = libmmd::pack::read_render_assets(input, layout);
+        if (const auto* error = std::get_if<libmmd::pack::Error>(&asset_result)) {
+            runtime->value.set_error(
+                "mmdpack render metadata error at byte " + std::to_string(error->offset) + ": " + error->message);
+            return LIBMMD_STATUS_INVALID_DATA;
+        }
         auto bytes = std::vector<std::byte>(input.begin(), input.end());
         *output = new libmmd_model{
             std::move(bytes),
             layout,
             std::get<libmmd::RenderMesh>(std::move(render_result)),
+            std::get<libmmd::pack::RenderAssets>(std::move(asset_result)),
             std::get<std::vector<libmmd::pmx::Bone>>(std::move(skeleton_result)),
             std::nullopt,
             {},
@@ -443,6 +451,60 @@ libmmd_status libmmd_model_get_render_mesh_view(
     output->index_size = model->render_mesh.indices.size();
     output->index_count = model->render_mesh.index_count;
     output->index_stride = model->render_mesh.index_stride;
+    return LIBMMD_STATUS_OK;
+}
+
+libmmd_status libmmd_model_get_texture(
+    const libmmd_model* model,
+    const std::uint32_t texture_index,
+    libmmd_texture_info* output) {
+    if (model == nullptr || output == nullptr || output->struct_size < sizeof(libmmd_texture_info) ||
+        texture_index >= model->render_assets.textures.size()) {
+        return LIBMMD_STATUS_INVALID_ARGUMENT;
+    }
+    if (output->abi_version != LIBMMD_ABI_VERSION) return LIBMMD_STATUS_UNSUPPORTED_ABI;
+    const auto size = output->struct_size;
+    const auto& texture = model->render_assets.textures[texture_index];
+    std::memset(output, 0, sizeof(libmmd_texture_info));
+    output->abi_version = LIBMMD_ABI_VERSION;
+    output->struct_size = size;
+    output->path = texture.data();
+    output->path_size = texture.size();
+    return LIBMMD_STATUS_OK;
+}
+
+libmmd_status libmmd_model_get_material(
+    const libmmd_model* model,
+    const std::uint32_t material_index,
+    libmmd_material_info* output) {
+    if (model == nullptr || output == nullptr || output->struct_size < sizeof(libmmd_material_info) ||
+        material_index >= model->render_assets.materials.size()) {
+        return LIBMMD_STATUS_INVALID_ARGUMENT;
+    }
+    if (output->abi_version != LIBMMD_ABI_VERSION) return LIBMMD_STATUS_UNSUPPORTED_ABI;
+    const auto size = output->struct_size;
+    const auto& source = model->render_assets.materials[material_index];
+    const auto& material = source.value;
+    std::memset(output, 0, sizeof(libmmd_material_info));
+    output->abi_version = LIBMMD_ABI_VERSION;
+    output->struct_size = size;
+    output->name = material.name.data();
+    output->name_size = material.name.size();
+    output->english_name = material.english_name.data();
+    output->english_name_size = material.english_name.size();
+    std::memcpy(output->diffuse, material.diffuse.data(), sizeof(output->diffuse));
+    std::memcpy(output->specular, material.specular.data(), sizeof(output->specular));
+    output->specular_strength = material.specular_strength;
+    std::memcpy(output->ambient, material.ambient.data(), sizeof(output->ambient));
+    std::memcpy(output->edge_color, material.edge_color.data(), sizeof(output->edge_color));
+    output->edge_size = material.edge_size;
+    output->flags = material.flags;
+    output->texture_index = material.texture_index;
+    output->sphere_texture_index = material.sphere_texture_index;
+    output->toon_texture_index = material.toon_texture_index;
+    output->sphere_mode = material.sphere_mode;
+    output->first_index = source.first_index;
+    output->index_count = material.index_count;
     return LIBMMD_STATUS_OK;
 }
 
@@ -844,6 +906,51 @@ libmmd_status libmmd_model_instance_get_matrices(
     output->float_count = matrices.size();
     output->bone_count = instance->value->animation().pose().bone_count();
     output->matrix_stride = 16;
+    return LIBMMD_STATUS_OK;
+}
+
+libmmd_status libmmd_model_instance_get_render_packet(
+    const libmmd_model_instance* instance,
+    libmmd_render_packet* output) {
+    if (instance == nullptr || output == nullptr || output->struct_size < sizeof(libmmd_render_packet)) {
+        return LIBMMD_STATUS_INVALID_ARGUMENT;
+    }
+    if (output->abi_version != LIBMMD_ABI_VERSION) return LIBMMD_STATUS_UNSUPPORTED_ABI;
+    const auto size = output->struct_size;
+    const auto& mesh = instance->model->render_mesh;
+    const auto& transform = instance->value->transform();
+    const auto matrices = instance->value->animation().pose().skinning_matrices();
+    std::memset(output, 0, sizeof(libmmd_render_packet));
+    output->abi_version = LIBMMD_ABI_VERSION;
+    output->struct_size = size;
+    output->backend_mask = LIBMMD_RENDER_BACKEND_OPENGL | LIBMMD_RENDER_BACKEND_VULKAN;
+    output->visible = instance->value->visible() ? 1u : 0u;
+    output->transform.position[0] = transform.position.x;
+    output->transform.position[1] = transform.position.y;
+    output->transform.position[2] = transform.position.z;
+    output->transform.rotation[0] = transform.rotation.x;
+    output->transform.rotation[1] = transform.rotation.y;
+    output->transform.rotation[2] = transform.rotation.z;
+    output->transform.rotation[3] = transform.rotation.w;
+    output->transform.scale[0] = transform.scale.x;
+    output->transform.scale[1] = transform.scale.y;
+    output->transform.scale[2] = transform.scale.z;
+    output->vertex_data = mesh.vertices.data();
+    output->vertex_size = mesh.vertices.size();
+    output->vertex_count = mesh.vertex_count;
+    output->vertex_stride = 28;
+    output->skinning_data = mesh.skinning.data();
+    output->skinning_size = mesh.skinning.size();
+    output->skinning_stride = 32;
+    output->index_data = mesh.indices.data();
+    output->index_size = mesh.indices.size();
+    output->index_count = mesh.index_count;
+    output->index_stride = mesh.index_stride;
+    output->matrix_data = matrices.data();
+    output->matrix_float_count = matrices.size();
+    output->bone_count = instance->value->animation().pose().bone_count();
+    output->matrix_stride = 16;
+    output->draw_count = instance->model->render_assets.materials.size();
     return LIBMMD_STATUS_OK;
 }
 

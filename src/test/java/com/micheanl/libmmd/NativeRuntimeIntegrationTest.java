@@ -107,6 +107,17 @@ final class NativeRuntimeIntegrationTest {
             assertTrue(info.morphCount() > 0);
             assertTrue(info.rigidBodyCount() > 0);
             assertTrue(info.jointCount() > 0);
+            for (var textureIndex = 0; textureIndex < info.textureCount(); textureIndex++) {
+                assertTrue(model.texture(textureIndex) != null);
+            }
+            var coveredIndices = 0;
+            for (var materialIndex = 0; materialIndex < info.materialCount(); materialIndex++) {
+                var material = model.material(materialIndex);
+                assertTrue(material.firstIndex() == coveredIndices);
+                assertTrue(material.indexCount() >= 0 && material.indexCount() % 3 == 0);
+                coveredIndices += material.indexCount();
+            }
+            assertTrue(coveredIndices == info.indexCount());
             var mesh = model.mesh();
             assertTrue(mesh.vertexCount() == info.vertexCount());
             assertTrue(mesh.vertexStride() == 68);
@@ -182,6 +193,17 @@ final class NativeRuntimeIntegrationTest {
                 assertTrue(state.looping());
                 assertTrue(state.transform().rotation().w() == 1.0f);
                 assertTrue(instance.matrices().boneCount() == info.boneCount());
+                var packet = instance.renderPacket();
+                assertTrue(packet.backendMask() == (SceneRuntime.OPENGL | SceneRuntime.VULKAN));
+                assertTrue(packet.visible());
+                assertTrue(packet.vertexCount() == info.vertexCount());
+                assertTrue(packet.vertices().byteSize() == (long) packet.vertexCount() * packet.vertexStride());
+                assertTrue(packet.skinning().byteSize() == (long) packet.vertexCount() * packet.skinningStride());
+                assertTrue(packet.indexCount() == info.indexCount());
+                assertTrue(packet.indices().byteSize() == (long) packet.indexCount() * packet.indexStride());
+                assertTrue(packet.boneCount() == info.boneCount());
+                assertTrue(packet.matrices().byteSize() == (long) packet.boneCount() * packet.matrixStride() * Float.BYTES);
+                assertTrue(packet.drawCount() == info.materialCount());
                 assertThrows(IllegalStateException.class, motion::close);
                 instance.stop(0.1f);
             }

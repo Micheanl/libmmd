@@ -18,6 +18,8 @@ import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
 
 public final class SceneRuntime {
+    public static final int OPENGL = 0x00000001;
+    public static final int VULKAN = 0x00000002;
     private static final MemoryLayout CONFIG_LAYOUT = MemoryLayout.structLayout(
         JAVA_INT, JAVA_INT, JAVA_FLOAT, JAVA_INT
     );
@@ -43,6 +45,31 @@ public final class SceneRuntime {
     private static final MemoryLayout MATRIX_VIEW_LAYOUT = MemoryLayout.structLayout(
         JAVA_INT, JAVA_INT, ADDRESS, JAVA_LONG, JAVA_INT, JAVA_INT
     );
+    private static final MemoryLayout RENDER_PACKET_LAYOUT = MemoryLayout.structLayout(
+        JAVA_INT,
+        JAVA_INT,
+        JAVA_INT,
+        JAVA_INT,
+        TRANSFORM_LAYOUT,
+        ADDRESS,
+        JAVA_LONG,
+        JAVA_INT,
+        JAVA_INT,
+        ADDRESS,
+        JAVA_LONG,
+        JAVA_INT,
+        JAVA_INT,
+        ADDRESS,
+        JAVA_LONG,
+        JAVA_INT,
+        JAVA_INT,
+        ADDRESS,
+        JAVA_LONG,
+        JAVA_INT,
+        JAVA_INT,
+        JAVA_INT,
+        JAVA_INT
+    );
 
     private final NativeRuntime owner;
     private final MethodHandle createScene;
@@ -56,6 +83,7 @@ public final class SceneRuntime {
     private final MethodHandle stop;
     private final MethodHandle getState;
     private final MethodHandle getMatrices;
+    private final MethodHandle getRenderPacket;
     private final Set<Scene> scenes = new LinkedHashSet<>();
 
     SceneRuntime(NativeRuntime owner, Linker linker, SymbolLookup symbols) {
@@ -119,6 +147,14 @@ public final class SceneRuntime {
             linker,
             symbols,
             "libmmd_model_instance_get_matrices",
+            JAVA_INT,
+            ADDRESS,
+            ADDRESS
+        );
+        getRenderPacket = downcall(
+            linker,
+            symbols,
+            "libmmd_model_instance_get_render_packet",
             JAVA_INT,
             ADDRESS,
             ADDRESS
@@ -301,6 +337,56 @@ public final class SceneRuntime {
         }
     }
 
+    private RenderPacket renderPacket(ModelInstance instance, MemorySegment handle) {
+        try (var arena = Arena.ofConfined()) {
+            var output = arena.allocate(RENDER_PACKET_LAYOUT);
+            header(output, RENDER_PACKET_LAYOUT);
+            var status = (int) getRenderPacket.invokeExact(handle, output);
+            check(status, "Unable to query native render packet");
+            var vertexSize = output.get(JAVA_LONG, 64);
+            var vertexCount = output.get(JAVA_INT, 72);
+            var vertexStride = output.get(JAVA_INT, 76);
+            var skinningSize = output.get(JAVA_LONG, 88);
+            var skinningStride = output.get(JAVA_INT, 96);
+            var indexSize = output.get(JAVA_LONG, 112);
+            var indexCount = output.get(JAVA_INT, 120);
+            var indexStride = output.get(JAVA_INT, 124);
+            var matrixFloatCount = output.get(JAVA_LONG, 136);
+            var boneCount = output.get(JAVA_INT, 144);
+            var matrixStride = output.get(JAVA_INT, 148);
+            if (vertexSize != Math.multiplyExact((long) vertexCount, vertexStride) ||
+                skinningSize != Math.multiplyExact((long) vertexCount, skinningStride) ||
+                indexSize != Math.multiplyExact((long) indexCount, indexStride) ||
+                matrixFloatCount != Math.multiplyExact((long) boneCount, matrixStride) ||
+                vertexStride != 28 || skinningStride != 32 || matrixStride != 16 ||
+                (indexStride != Short.BYTES && indexStride != Integer.BYTES)) {
+                throw new IllegalStateException("libmmd returned an inconsistent render packet");
+            }
+            return new RenderPacket(
+                instance,
+                output.get(JAVA_INT, 8),
+                output.get(JAVA_INT, 12) != 0,
+                new Transform(vector(output, 16), quaternion(output, 28), vector(output, 44)),
+                output.get(ADDRESS, 56).reinterpret(vertexSize).asReadOnly(),
+                vertexCount,
+                vertexStride,
+                output.get(ADDRESS, 80).reinterpret(skinningSize).asReadOnly(),
+                skinningStride,
+                output.get(ADDRESS, 104).reinterpret(indexSize).asReadOnly(),
+                indexCount,
+                indexStride,
+                output.get(ADDRESS, 128).reinterpret(Math.multiplyExact(matrixFloatCount, Float.BYTES)).asReadOnly(),
+                boneCount,
+                matrixStride,
+                output.get(JAVA_INT, 152)
+            );
+        } catch (RuntimeException failure) {
+            throw failure;
+        } catch (Throwable failure) {
+            throw new IllegalStateException("Unable to call native render packet query", failure);
+        }
+    }
+
     private void check(int status, String operation) throws Throwable {
         if (status == 0) return;
         var message = owner.errorMessage(operation, status);
@@ -442,6 +528,136 @@ public final class SceneRuntime {
         }
     }
 
+    public static final class RenderPacket {
+        private final ModelInstance owner;
+        private final int backendMask;
+        private final boolean visible;
+        private final Transform transform;
+        private final MemorySegment vertices;
+        private final int vertexCount;
+        private final int vertexStride;
+        private final MemorySegment skinning;
+        private final int skinningStride;
+        private final MemorySegment indices;
+        private final int indexCount;
+        private final int indexStride;
+        private final MemorySegment matrices;
+        private final int boneCount;
+        private final int matrixStride;
+        private final int drawCount;
+
+        private RenderPacket(
+            ModelInstance owner,
+            int backendMask,
+            boolean visible,
+            Transform transform,
+            MemorySegment vertices,
+            int vertexCount,
+            int vertexStride,
+            MemorySegment skinning,
+            int skinningStride,
+            MemorySegment indices,
+            int indexCount,
+            int indexStride,
+            MemorySegment matrices,
+            int boneCount,
+            int matrixStride,
+            int drawCount
+        ) {
+            this.owner = owner;
+            this.backendMask = backendMask;
+            this.visible = visible;
+            this.transform = transform;
+            this.vertices = vertices;
+            this.vertexCount = vertexCount;
+            this.vertexStride = vertexStride;
+            this.skinning = skinning;
+            this.skinningStride = skinningStride;
+            this.indices = indices;
+            this.indexCount = indexCount;
+            this.indexStride = indexStride;
+            this.matrices = matrices;
+            this.boneCount = boneCount;
+            this.matrixStride = matrixStride;
+            this.drawCount = drawCount;
+        }
+
+        public int backendMask() {
+            owner.ensureOpen();
+            return backendMask;
+        }
+
+        public boolean visible() {
+            owner.ensureOpen();
+            return visible;
+        }
+
+        public Transform transform() {
+            owner.ensureOpen();
+            return transform;
+        }
+
+        public MemorySegment vertices() {
+            owner.ensureOpen();
+            return vertices;
+        }
+
+        public int vertexCount() {
+            owner.ensureOpen();
+            return vertexCount;
+        }
+
+        public int vertexStride() {
+            owner.ensureOpen();
+            return vertexStride;
+        }
+
+        public MemorySegment skinning() {
+            owner.ensureOpen();
+            return skinning;
+        }
+
+        public int skinningStride() {
+            owner.ensureOpen();
+            return skinningStride;
+        }
+
+        public MemorySegment indices() {
+            owner.ensureOpen();
+            return indices;
+        }
+
+        public int indexCount() {
+            owner.ensureOpen();
+            return indexCount;
+        }
+
+        public int indexStride() {
+            owner.ensureOpen();
+            return indexStride;
+        }
+
+        public MemorySegment matrices() {
+            owner.ensureOpen();
+            return matrices;
+        }
+
+        public int boneCount() {
+            owner.ensureOpen();
+            return boneCount;
+        }
+
+        public int matrixStride() {
+            owner.ensureOpen();
+            return matrixStride;
+        }
+
+        public int drawCount() {
+            owner.ensureOpen();
+            return drawCount;
+        }
+    }
+
     public static final class Scene implements AutoCloseable {
         private final SceneRuntime owner;
         private final Set<ModelInstance> instances = new LinkedHashSet<>();
@@ -551,6 +767,11 @@ public final class SceneRuntime {
         public MatrixView matrices() {
             ensureOpen();
             return scene.owner.matrices(this, handle);
+        }
+
+        public RenderPacket renderPacket() {
+            ensureOpen();
+            return scene.owner.renderPacket(this, handle);
         }
 
         public boolean isClosed() {

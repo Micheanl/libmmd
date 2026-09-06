@@ -47,14 +47,28 @@ struct Layout {
     BufferView indices;
 };
 
+struct RenderMaterial {
+    pmx::Material value;
+    std::uint32_t first_index;
+};
+
+struct RenderAssets {
+    std::vector<std::string> textures;
+    std::vector<RenderMaterial> materials;
+};
+
 using InfoResult = std::variant<Info, Error>;
 using LayoutResult = std::variant<Layout, Error>;
+using RenderAssetsResult = std::variant<RenderAssets, Error>;
 
 [[nodiscard]] std::vector<std::byte> build(
     const pmx::Model& model,
     std::span<const std::byte> source);
 [[nodiscard]] InfoResult inspect(std::span<const std::byte> bytes);
 [[nodiscard]] LayoutResult inspect_layout(std::span<const std::byte> bytes);
+[[nodiscard]] RenderAssetsResult read_render_assets(
+    std::span<const std::byte> bytes,
+    const Layout& layout);
 
 }
 

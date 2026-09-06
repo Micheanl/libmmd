@@ -1,7 +1,9 @@
 #include "native/libmmd/src/mmdpack.hpp"
 
 #include <array>
+#include <algorithm>
 #include <bit>
+#include <cmath>
 #include <cstring>
 #include <limits>
 #include <stdexcept>
@@ -76,7 +78,8 @@ void overwrite(std::vector<std::byte>& output, const std::size_t offset, const s
 
 class Reader final {
 public:
-    explicit Reader(const std::span<const std::byte> bytes) : bytes_(bytes) {}
+    explicit Reader(const std::span<const std::byte> bytes, const std::size_t position = 0)
+        : bytes_(bytes), position_(position) {}
 
     template <typename T>
     bool read(T& value) {
@@ -102,12 +105,25 @@ public:
         return true;
     }
 
+    bool read_string(std::string& value) {
+        std::uint32_t size = 0;
+        if (!read(size) || bytes_.size() - position_ < size) return false;
+        value.assign(reinterpret_cast<const char*>(bytes_.data() + position_), size);
+        position_ += size;
+        return true;
+    }
+
     [[nodiscard]] std::size_t position() const noexcept { return position_; }
 
 private:
     std::span<const std::byte> bytes_;
     std::size_t position_ = 0;
 };
+
+template <std::size_t Size>
+bool finite(const std::array<float, Size>& values) {
+    return std::all_of(values.begin(), values.end(), [](const float value) { return std::isfinite(value); });
+}
 
 }
 
@@ -339,6 +355,58 @@ LayoutResult inspect_layout(const std::span<const std::byte> bytes) {
         .vertices = {vertex_offset, vertex_size, info.vertex_count, vertex_stride},
         .indices = {index_offset, index_size, info.index_count, index_stride},
     };
+}
+
+RenderAssetsResult read_render_assets(
+    const std::span<const std::byte> bytes,
+    const Layout& layout) {
+    const auto start = layout.indices.offset + layout.indices.size;
+    if (start > bytes.size()) return Error{start, "mmdpack render metadata offset is invalid"};
+    Reader reader(bytes, start);
+    RenderAssets output;
+    output.textures.reserve(layout.info.texture_count);
+    for (std::uint32_t index = 0; index < layout.info.texture_count; ++index) {
+        std::string texture;
+        if (!reader.read_string(texture)) {
+            return Error{reader.position(), "mmdpack texture path is truncated"};
+        }
+        output.textures.push_back(std::move(texture));
+    }
+
+    output.materials.reserve(layout.info.material_count);
+    std::uint64_t first_index = 0;
+    for (std::uint32_t index = 0; index < layout.info.material_count; ++index) {
+        pmx::Material material;
+        if (!reader.read_string(material.name) || !reader.read_string(material.english_name) ||
+            !reader.read(material.diffuse) || !reader.read(material.specular) ||
+            !reader.read(material.specular_strength) || !reader.read(material.ambient) ||
+            !reader.read(material.flags) || !reader.read(material.edge_color) ||
+            !reader.read(material.edge_size) || !reader.read(material.texture_index) ||
+            !reader.read(material.sphere_texture_index) || !reader.read(material.sphere_mode) ||
+            !reader.read(material.toon_texture_index) || !reader.read_string(material.metadata) ||
+            !reader.read(material.index_count)) {
+            return Error{reader.position(), "mmdpack material is truncated"};
+        }
+        const auto valid_texture = [&](const std::int32_t texture) {
+            return texture == -1 || (texture >= 0 && static_cast<std::uint32_t>(texture) < layout.info.texture_count);
+        };
+        const auto valid_toon = valid_texture(material.toon_texture_index) ||
+            (material.toon_texture_index >= 10 && material.toon_texture_index <= 19);
+        if (!finite(material.diffuse) || !finite(material.specular) ||
+            !std::isfinite(material.specular_strength) || !finite(material.ambient) ||
+            !finite(material.edge_color) || !std::isfinite(material.edge_size) ||
+            !valid_texture(material.texture_index) || !valid_texture(material.sphere_texture_index) ||
+            !valid_toon || material.sphere_mode > 3 || material.index_count % 3 != 0 ||
+            first_index + material.index_count > layout.info.index_count) {
+            return Error{reader.position(), "mmdpack material data is invalid"};
+        }
+        output.materials.push_back({std::move(material), static_cast<std::uint32_t>(first_index)});
+        first_index += output.materials.back().value.index_count;
+    }
+    if (first_index != layout.info.index_count) {
+        return Error{reader.position(), "mmdpack material ranges do not cover the index buffer"};
+    }
+    return output;
 }
 
 }

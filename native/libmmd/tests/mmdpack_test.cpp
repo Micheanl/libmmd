@@ -11,6 +11,10 @@ int main() {
     model.indices = {0, 1, 0};
     model.textures = {"body.png"};
     model.materials.resize(1);
+    model.materials.front().name = "body";
+    model.materials.front().diffuse = {1.0f, 0.5f, 0.25f, 1.0f};
+    model.materials.front().texture_index = 0;
+    model.materials.front().toon_texture_index = 10;
     model.materials.front().index_count = 3;
     model.bones.resize(1);
     model.morphs.resize(1);
@@ -28,6 +32,17 @@ int main() {
     assert(info.morph_count == 1);
     assert(info.rigid_body_count == 1);
     assert(info.joint_count == 1);
+    const auto layout = std::get<libmmd::pack::Layout>(libmmd::pack::inspect_layout(bytes));
+    const auto assets_result = libmmd::pack::read_render_assets(bytes, layout);
+    assert(std::holds_alternative<libmmd::pack::RenderAssets>(assets_result));
+    const auto& assets = std::get<libmmd::pack::RenderAssets>(assets_result);
+    assert(assets.textures.size() == 1);
+    assert(assets.textures.front() == "body.png");
+    assert(assets.materials.size() == 1);
+    assert(assets.materials.front().value.name == "body");
+    assert(assets.materials.front().value.texture_index == 0);
+    assert(assets.materials.front().first_index == 0);
+    assert(assets.materials.front().value.index_count == 3);
 
     auto damaged = bytes;
     damaged.back() ^= std::byte{1};

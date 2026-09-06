@@ -98,6 +98,35 @@ typedef struct libmmd_render_mesh_view {
     uint32_t index_stride;
 } libmmd_render_mesh_view;
 
+typedef struct libmmd_texture_info {
+    uint32_t abi_version;
+    uint32_t struct_size;
+    const char* path;
+    size_t path_size;
+} libmmd_texture_info;
+
+typedef struct libmmd_material_info {
+    uint32_t abi_version;
+    uint32_t struct_size;
+    const char* name;
+    size_t name_size;
+    const char* english_name;
+    size_t english_name_size;
+    float diffuse[4];
+    float specular[3];
+    float specular_strength;
+    float ambient[3];
+    float edge_color[4];
+    float edge_size;
+    uint32_t flags;
+    int32_t texture_index;
+    int32_t sphere_texture_index;
+    int32_t toon_texture_index;
+    uint32_t sphere_mode;
+    uint32_t first_index;
+    uint32_t index_count;
+} libmmd_material_info;
+
 typedef struct libmmd_bone_info {
     uint32_t abi_version;
     uint32_t struct_size;
@@ -186,6 +215,35 @@ typedef struct libmmd_instance_state {
     float playback_seconds;
     float transition_weight;
 } libmmd_instance_state;
+
+typedef struct libmmd_render_packet {
+    uint32_t abi_version;
+    uint32_t struct_size;
+    uint32_t backend_mask;
+    uint32_t visible;
+    libmmd_instance_transform transform;
+    const void* vertex_data;
+    size_t vertex_size;
+    uint32_t vertex_count;
+    uint32_t vertex_stride;
+    const void* skinning_data;
+    size_t skinning_size;
+    uint32_t skinning_stride;
+    uint32_t reserved0;
+    const void* index_data;
+    size_t index_size;
+    uint32_t index_count;
+    uint32_t index_stride;
+    const float* matrix_data;
+    size_t matrix_float_count;
+    uint32_t bone_count;
+    uint32_t matrix_stride;
+    uint32_t draw_count;
+    uint32_t reserved1;
+} libmmd_render_packet;
+
+#define LIBMMD_RENDER_BACKEND_OPENGL 0x00000001u
+#define LIBMMD_RENDER_BACKEND_VULKAN 0x00000002u
 
 typedef enum libmmd_physics_processor {
     LIBMMD_PHYSICS_PROCESSOR_AUTO = 0,
@@ -338,6 +396,14 @@ LIBMMD_API libmmd_status libmmd_model_get_mesh_view(
 LIBMMD_API libmmd_status libmmd_model_get_render_mesh_view(
     const libmmd_model* model,
     libmmd_render_mesh_view* output);
+LIBMMD_API libmmd_status libmmd_model_get_texture(
+    const libmmd_model* model,
+    uint32_t texture_index,
+    libmmd_texture_info* output);
+LIBMMD_API libmmd_status libmmd_model_get_material(
+    const libmmd_model* model,
+    uint32_t material_index,
+    libmmd_material_info* output);
 LIBMMD_API libmmd_status libmmd_model_get_bone(
     const libmmd_model* model,
     uint32_t bone_index,
@@ -414,6 +480,9 @@ LIBMMD_API libmmd_status libmmd_model_instance_get_state(
 LIBMMD_API libmmd_status libmmd_model_instance_get_matrices(
     const libmmd_model_instance* instance,
     libmmd_matrix_view* output);
+LIBMMD_API libmmd_status libmmd_model_instance_get_render_packet(
+    const libmmd_model_instance* instance,
+    libmmd_render_packet* output);
 LIBMMD_API libmmd_status libmmd_physics_world_create(
     libmmd_runtime* runtime,
     const libmmd_physics_world_config* config,

@@ -77,6 +77,31 @@ public final class NativeRuntime implements AutoCloseable {
         JAVA_INT.withName("index_count"),
         JAVA_INT.withName("index_stride")
     );
+    private static final MemoryLayout TEXTURE_INFO_LAYOUT = MemoryLayout.structLayout(
+        JAVA_INT, JAVA_INT, ADDRESS, JAVA_LONG
+    );
+    private static final MemoryLayout MATERIAL_INFO_LAYOUT = MemoryLayout.structLayout(
+        JAVA_INT,
+        JAVA_INT,
+        ADDRESS,
+        JAVA_LONG,
+        ADDRESS,
+        JAVA_LONG,
+        MemoryLayout.sequenceLayout(4, JAVA_FLOAT),
+        MemoryLayout.sequenceLayout(3, JAVA_FLOAT),
+        JAVA_FLOAT,
+        MemoryLayout.sequenceLayout(3, JAVA_FLOAT),
+        MemoryLayout.sequenceLayout(4, JAVA_FLOAT),
+        JAVA_FLOAT,
+        JAVA_INT,
+        JAVA_INT,
+        JAVA_INT,
+        JAVA_INT,
+        JAVA_INT,
+        JAVA_INT,
+        JAVA_INT,
+        MemoryLayout.paddingLayout(4)
+    );
     private static final MemoryLayout BONE_LAYOUT = MemoryLayout.structLayout(
         JAVA_INT.withName("abi_version"),
         JAVA_INT.withName("struct_size"),
@@ -136,6 +161,8 @@ public final class NativeRuntime implements AutoCloseable {
     private final MethodHandle getPackView;
     private final MethodHandle getMeshView;
     private final MethodHandle getRenderMeshView;
+    private final MethodHandle getTexture;
+    private final MethodHandle getMaterial;
     private final MethodHandle getBone;
     private final MethodHandle getIkLink;
     private final MethodHandle createPose;
@@ -192,6 +219,18 @@ public final class NativeRuntime implements AutoCloseable {
         this.getPackView = getPackView;
         this.getMeshView = getMeshView;
         this.getRenderMeshView = getRenderMeshView;
+        this.getTexture = downcall(
+            linker,
+            symbols,
+            "libmmd_model_get_texture",
+            FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, ADDRESS)
+        );
+        this.getMaterial = downcall(
+            linker,
+            symbols,
+            "libmmd_model_get_material",
+            FunctionDescriptor.of(JAVA_INT, ADDRESS, JAVA_INT, ADDRESS)
+        );
         this.getBone = getBone;
         this.getIkLink = getIkLink;
         this.createPose = createPose;
@@ -687,6 +726,56 @@ public final class NativeRuntime implements AutoCloseable {
         }
     }
 
+    private synchronized String texture(MemorySegment modelHandle, int textureIndex) {
+        ensureOpen();
+        if (textureIndex < 0) throw new IndexOutOfBoundsException("textureIndex must not be negative");
+        try (var callArena = Arena.ofConfined()) {
+            var output = callArena.allocate(TEXTURE_INFO_LAYOUT);
+            output.set(JAVA_INT, 0, ABI_VERSION);
+            output.set(JAVA_INT, 4, Math.toIntExact(TEXTURE_INFO_LAYOUT.byteSize()));
+            var status = (int) getTexture.invokeExact(modelHandle, textureIndex, output);
+            if (status != 0) throw new IndexOutOfBoundsException("Texture index is outside the model: " + textureIndex);
+            return nativeString(output.get(ADDRESS, 8), output.get(JAVA_LONG, 16));
+        } catch (RuntimeException failure) {
+            throw failure;
+        } catch (Throwable failure) {
+            throw new IllegalStateException("Unable to call libmmd texture query", failure);
+        }
+    }
+
+    private synchronized Material material(MemorySegment modelHandle, int materialIndex) {
+        ensureOpen();
+        if (materialIndex < 0) throw new IndexOutOfBoundsException("materialIndex must not be negative");
+        try (var callArena = Arena.ofConfined()) {
+            var output = callArena.allocate(MATERIAL_INFO_LAYOUT);
+            output.set(JAVA_INT, 0, ABI_VERSION);
+            output.set(JAVA_INT, 4, Math.toIntExact(MATERIAL_INFO_LAYOUT.byteSize()));
+            var status = (int) getMaterial.invokeExact(modelHandle, materialIndex, output);
+            if (status != 0) throw new IndexOutOfBoundsException("Material index is outside the model: " + materialIndex);
+            return new Material(
+                nativeString(output.get(ADDRESS, 8), output.get(JAVA_LONG, 16)),
+                nativeString(output.get(ADDRESS, 24), output.get(JAVA_LONG, 32)),
+                color(output, 40),
+                vector(output, 56),
+                output.get(JAVA_FLOAT, 68),
+                vector(output, 72),
+                color(output, 84),
+                output.get(JAVA_FLOAT, 100),
+                output.get(JAVA_INT, 104),
+                output.get(JAVA_INT, 108),
+                output.get(JAVA_INT, 112),
+                output.get(JAVA_INT, 116),
+                output.get(JAVA_INT, 120),
+                output.get(JAVA_INT, 124),
+                output.get(JAVA_INT, 128)
+            );
+        } catch (RuntimeException failure) {
+            throw failure;
+        } catch (Throwable failure) {
+            throw new IllegalStateException("Unable to call libmmd material query", failure);
+        }
+    }
+
     private synchronized Bone bone(MemorySegment modelHandle, int boneIndex) {
         ensureOpen();
         if (boneIndex < 0) throw new IndexOutOfBoundsException("boneIndex must not be negative");
@@ -914,6 +1003,15 @@ public final class NativeRuntime implements AutoCloseable {
         );
     }
 
+    private static Color color(MemorySegment segment, long offset) {
+        return new Color(
+            segment.get(JAVA_FLOAT, offset),
+            segment.get(JAVA_FLOAT, offset + Float.BYTES),
+            segment.get(JAVA_FLOAT, offset + 2L * Float.BYTES),
+            segment.get(JAVA_FLOAT, offset + 3L * Float.BYTES)
+        );
+    }
+
     private static String nativeString(MemorySegment address, long size) {
         if (size == 0) return "";
         if (size < 0 || size > Integer.MAX_VALUE || address.equals(MemorySegment.NULL)) {
@@ -962,6 +1060,26 @@ public final class NativeRuntime implements AutoCloseable {
     public record Quaternion(float x, float y, float z, float w) {
         public static final Quaternion IDENTITY = new Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
     }
+
+    public record Color(float red, float green, float blue, float alpha) {}
+
+    public record Material(
+        String name,
+        String englishName,
+        Color diffuse,
+        Vector3 specular,
+        float specularStrength,
+        Vector3 ambient,
+        Color edgeColor,
+        float edgeSize,
+        int flags,
+        int textureIndex,
+        int sphereTextureIndex,
+        int toonTextureIndex,
+        int sphereMode,
+        int firstIndex,
+        int indexCount
+    ) {}
 
     public record Bone(
         String name,
@@ -1320,6 +1438,16 @@ public final class NativeRuntime implements AutoCloseable {
         public RenderMesh renderMesh() {
             ensureOpen();
             return owner.renderMesh(this, handle);
+        }
+
+        public String texture(int textureIndex) {
+            ensureOpen();
+            return owner.texture(handle, textureIndex);
+        }
+
+        public Material material(int materialIndex) {
+            ensureOpen();
+            return owner.material(handle, materialIndex);
         }
 
         public Bone bone(int boneIndex) {

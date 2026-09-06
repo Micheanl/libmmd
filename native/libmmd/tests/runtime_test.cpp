@@ -46,6 +46,9 @@ std::vector<std::byte> motion_bytes() {
 }
 
 int main() {
+    static_assert(sizeof(libmmd_texture_info) == 24);
+    static_assert(sizeof(libmmd_material_info) == 136);
+    static_assert(sizeof(libmmd_render_packet) == 160);
     assert(libmmd_abi_version() == LIBMMD_ABI_VERSION);
     assert(std::strcmp(libmmd_version(), "0.8.0") == 0);
 
@@ -66,6 +69,10 @@ int main() {
     source_model.indices = {0, 1, 0};
     source_model.textures = {"body.png"};
     source_model.materials.resize(1);
+    source_model.materials.front().name = "body";
+    source_model.materials.front().english_name = "Body";
+    source_model.materials.front().diffuse = {1.0f, 0.5f, 0.25f, 1.0f};
+    source_model.materials.front().texture_index = 0;
     source_model.materials.front().index_count = 3;
     source_model.bones.resize(1);
     source_model.bones.front().name = "root";
@@ -137,6 +144,20 @@ int main() {
     assert(render_mesh.index_count == 3);
     assert(render_mesh.index_stride == sizeof(std::uint16_t));
     assert(render_mesh.index_size == 3 * sizeof(std::uint16_t));
+    libmmd_texture_info texture{};
+    texture.abi_version = LIBMMD_ABI_VERSION;
+    texture.struct_size = sizeof(libmmd_texture_info);
+    assert(libmmd_model_get_texture(model, 0, &texture) == LIBMMD_STATUS_OK);
+    assert(std::string_view(texture.path, texture.path_size) == "body.png");
+    libmmd_material_info material{};
+    material.abi_version = LIBMMD_ABI_VERSION;
+    material.struct_size = sizeof(libmmd_material_info);
+    assert(libmmd_model_get_material(model, 0, &material) == LIBMMD_STATUS_OK);
+    assert(std::string_view(material.name, material.name_size) == "body");
+    assert(material.diffuse[1] == 0.5f);
+    assert(material.texture_index == 0);
+    assert(material.first_index == 0);
+    assert(material.index_count == 3);
     std::array<float, 3> converted_position{};
     std::memcpy(converted_position.data(), render_mesh.vertex_data, sizeof(converted_position));
     assert(converted_position[0] == 1.0f);
@@ -231,6 +252,17 @@ int main() {
     assert(state.transition_weight > 0.0f && state.transition_weight < 1.0f);
     assert(libmmd_model_instance_get_matrices(instance, &matrices) == LIBMMD_STATUS_OK);
     assert(matrices.bone_count == 1);
+    libmmd_render_packet packet{};
+    packet.abi_version = LIBMMD_ABI_VERSION;
+    packet.struct_size = sizeof(libmmd_render_packet);
+    assert(libmmd_model_instance_get_render_packet(instance, &packet) == LIBMMD_STATUS_OK);
+    assert(packet.backend_mask == (LIBMMD_RENDER_BACKEND_OPENGL | LIBMMD_RENDER_BACKEND_VULKAN));
+    assert(packet.visible == 1);
+    assert(packet.vertex_data == render_mesh.vertex_data);
+    assert(packet.skinning_data == render_mesh.skinning_data);
+    assert(packet.index_data == render_mesh.index_data);
+    assert(packet.matrix_data == matrices.data);
+    assert(packet.draw_count == 1);
     assert(libmmd_model_instance_stop(instance, 0.1f) == LIBMMD_STATUS_OK);
     libmmd_scene_destroy(scene);
     libmmd_motion_destroy(motion);
