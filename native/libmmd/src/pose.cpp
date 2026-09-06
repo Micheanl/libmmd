@@ -90,6 +90,34 @@ Quaternion slerp_identity(Quaternion target, const float weight) {
         identity_scale + target.w * target_scale});
 }
 
+Quaternion slerp(Quaternion from, Quaternion to, const float weight) {
+    from = normalized(from);
+    to = normalized(to);
+    auto cosine = from.x * to.x + from.y * to.y + from.z * to.z + from.w * to.w;
+    if (cosine < 0.0f) {
+        to = {-to.x, -to.y, -to.z, -to.w};
+        cosine = -cosine;
+    }
+    if (cosine > 0.9995f) {
+        return normalized({
+            from.x + (to.x - from.x) * weight,
+            from.y + (to.y - from.y) * weight,
+            from.z + (to.z - from.z) * weight,
+            from.w + (to.w - from.w) * weight,
+        });
+    }
+    const auto angle = std::acos(std::clamp(cosine, -1.0f, 1.0f));
+    const auto denominator = std::sin(angle);
+    const auto from_scale = std::sin((1.0f - weight) * angle) / denominator;
+    const auto to_scale = std::sin(weight * angle) / denominator;
+    return normalized({
+        from.x * from_scale + to.x * to_scale,
+        from.y * from_scale + to.y * to_scale,
+        from.z * from_scale + to.z * to_scale,
+        from.w * from_scale + to.w * to_scale,
+    });
+}
+
 Vector3 quaternion_to_euler(const Quaternion value) {
     const auto rotation = normalized(value);
     const auto sin_x = 2.0f * (rotation.w * rotation.x + rotation.y * rotation.z);
@@ -235,6 +263,26 @@ bool Pose::set_local_transform(
 bool Pose::set_ik_enabled(const std::uint32_t bone_index, const bool enabled) noexcept {
     if (bone_index >= bones_.size() || (bones_[bone_index].flags & 0x0020) == 0) return false;
     ik_enabled_[bone_index] = enabled;
+    return true;
+}
+
+bool Pose::blend(const Pose& from, const Pose& to, const float weight) noexcept {
+    if (from.bones_.size() != bones_.size() || to.bones_.size() != bones_.size() ||
+        !std::isfinite(weight) || weight < 0.0f || weight > 1.0f) {
+        return false;
+    }
+    for (std::size_t index = 0; index < bones_.size(); ++index) {
+        const auto& left = from.local_translations_[index];
+        const auto& right = to.local_translations_[index];
+        local_translations_[index] = {
+            left.x + (right.x - left.x) * weight,
+            left.y + (right.y - left.y) * weight,
+            left.z + (right.z - left.z) * weight,
+        };
+        local_rotations_[index] = slerp(from.local_rotations_[index], to.local_rotations_[index], weight);
+        ik_enabled_[index] = weight < 0.5f ? from.ik_enabled_[index] : to.ik_enabled_[index];
+    }
+    evaluate();
     return true;
 }
 

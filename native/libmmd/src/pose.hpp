@@ -34,6 +34,7 @@ public:
         Vector3 translation,
         Quaternion rotation) noexcept;
     [[nodiscard]] bool set_ik_enabled(std::uint32_t bone_index, bool enabled) noexcept;
+    [[nodiscard]] bool blend(const Pose& from, const Pose& to, float weight) noexcept;
     void evaluate() noexcept;
 
     [[nodiscard]] std::uint32_t bone_count() const noexcept;

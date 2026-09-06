@@ -19,6 +19,8 @@ public:
     [[nodiscard]] std::uint32_t duration_frames() const noexcept;
     [[nodiscard]] std::uint32_t bound_bone_count() const noexcept;
     [[nodiscard]] std::uint32_t bound_ik_count() const noexcept;
+    [[nodiscard]] std::uint32_t bone_count() const noexcept;
+    [[nodiscard]] float duration_seconds() const noexcept;
 
 private:
     struct Curve {

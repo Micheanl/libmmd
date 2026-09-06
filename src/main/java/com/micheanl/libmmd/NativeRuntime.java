@@ -149,6 +149,7 @@ public final class NativeRuntime implements AutoCloseable {
     private final MethodHandle getMotionInfo;
     private final MethodHandle applyMotion;
     private final MethodHandle lastError;
+    private final SceneRuntime scenes;
     private final PhysicsRuntime physics;
     private MemorySegment handle;
     private int openModels;
@@ -205,6 +206,7 @@ public final class NativeRuntime implements AutoCloseable {
         this.applyMotion = applyMotion;
         this.lastError = lastError;
         this.handle = handle;
+        this.scenes = new SceneRuntime(this, linker, symbols);
         this.physics = new PhysicsRuntime(this, linker, symbols);
     }
 
@@ -453,6 +455,11 @@ public final class NativeRuntime implements AutoCloseable {
         return physics;
     }
 
+    public SceneRuntime scenes() {
+        ensureOpen();
+        return scenes;
+    }
+
     public synchronized Model loadPack(Path path) {
         Objects.requireNonNull(path, "path");
         ensureOpen();
@@ -525,6 +532,9 @@ public final class NativeRuntime implements AutoCloseable {
     public synchronized void close() {
         if (isClosed()) {
             return;
+        }
+        if (scenes.hasOpenScenes()) {
+            throw new IllegalStateException("Close all libmmd scenes before closing the runtime");
         }
         if (openModels != 0) {
             throw new IllegalStateException("Close all libmmd models before closing the runtime");
@@ -1222,6 +1232,7 @@ public final class NativeRuntime implements AutoCloseable {
     public static final class Motion implements AutoCloseable {
         private final Model owner;
         private MemorySegment handle;
+        private int openInstances;
 
         private Motion(Model owner, MemorySegment handle) {
             this.owner = owner;
@@ -1247,8 +1258,30 @@ public final class NativeRuntime implements AutoCloseable {
         @Override
         public synchronized void close() {
             if (isClosed()) return;
+            if (openInstances != 0) {
+                throw new IllegalStateException("Stop this motion on all model instances before closing it");
+            }
             owner.closeMotion(handle);
             handle = MemorySegment.NULL;
+        }
+
+        synchronized void retainInstance() {
+            ensureOpen();
+            openInstances++;
+        }
+
+        synchronized void releaseInstance() {
+            openInstances--;
+        }
+
+        MemorySegment nativeHandle() {
+            ensureOpen();
+            return handle;
+        }
+
+        Model model() {
+            ensureOpen();
+            return owner;
         }
 
         private void ensureOpen() {
@@ -1262,6 +1295,7 @@ public final class NativeRuntime implements AutoCloseable {
         private MemorySegment handle;
         private int openPoses;
         private int openMotions;
+        private int openInstances;
 
         private Model(NativeRuntime owner, MemorySegment handle) {
             this.owner = owner;
@@ -1337,8 +1371,8 @@ public final class NativeRuntime implements AutoCloseable {
             if (isClosed()) {
                 return;
             }
-            if (openPoses != 0 || openMotions != 0) {
-                throw new IllegalStateException("Close all poses and motions before closing the model");
+            if (openPoses != 0 || openMotions != 0 || openInstances != 0) {
+                throw new IllegalStateException("Close all poses, motions, and model instances before closing the model");
             }
             owner.closeModel(handle);
             handle = MemorySegment.NULL;
@@ -1354,6 +1388,25 @@ public final class NativeRuntime implements AutoCloseable {
             ensureOpen();
             owner.destroyMotion(motionHandle);
             openMotions--;
+        }
+
+        synchronized void retainInstance() {
+            ensureOpen();
+            openInstances++;
+        }
+
+        synchronized void releaseInstance() {
+            openInstances--;
+        }
+
+        MemorySegment nativeHandle() {
+            ensureOpen();
+            return handle;
+        }
+
+        NativeRuntime runtime() {
+            ensureOpen();
+            return owner;
         }
 
         private void ensureOpen() {

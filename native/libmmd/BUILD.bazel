@@ -19,6 +19,8 @@ CORE_SOURCES = [
     "src/render_mesh.hpp",
     "src/runtime.cpp",
     "src/runtime.hpp",
+    "src/scene.cpp",
+    "src/scene.hpp",
     "src/skeleton.cpp",
     "src/skeleton.hpp",
     "src/text.cpp",
@@ -144,6 +146,13 @@ cc_test(
 )
 
 cc_test(
+    name = "scene_test",
+    srcs = ["tests/scene_test.cpp"],
+    copts = TEST_COPTS,
+    deps = [":core"],
+)
+
+cc_test(
     name = "physics_test",
     srcs = ["tests/physics_test.cpp"],
     copts = TEST_COPTS,
@@ -169,6 +178,7 @@ test_suite(
         ":pose_test",
         ":render_mesh_test",
         ":runtime_test",
+        ":scene_test",
         ":vmd_reader_test",
     ],
 )

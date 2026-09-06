@@ -1,0 +1,587 @@
+package com.micheanl.libmmd;
+
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
+import java.lang.invoke.MethodHandle;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+
+import static java.lang.foreign.ValueLayout.ADDRESS;
+import static java.lang.foreign.ValueLayout.JAVA_FLOAT;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_LONG;
+
+public final class SceneRuntime {
+    private static final MemoryLayout CONFIG_LAYOUT = MemoryLayout.structLayout(
+        JAVA_INT, JAVA_INT, JAVA_FLOAT, JAVA_INT
+    );
+    private static final MemoryLayout UPDATE_LAYOUT = MemoryLayout.structLayout(
+        JAVA_INT, JAVA_INT, JAVA_LONG, JAVA_INT, JAVA_INT, JAVA_INT, JAVA_INT, JAVA_FLOAT, JAVA_FLOAT
+    );
+    private static final MemoryLayout TRANSFORM_LAYOUT = MemoryLayout.structLayout(
+        MemoryLayout.sequenceLayout(3, JAVA_FLOAT),
+        MemoryLayout.sequenceLayout(4, JAVA_FLOAT),
+        MemoryLayout.sequenceLayout(3, JAVA_FLOAT)
+    );
+    private static final MemoryLayout STATE_LAYOUT = MemoryLayout.structLayout(
+        JAVA_INT,
+        JAVA_INT,
+        TRANSFORM_LAYOUT,
+        JAVA_INT,
+        JAVA_INT,
+        JAVA_INT,
+        JAVA_INT,
+        JAVA_FLOAT,
+        JAVA_FLOAT
+    );
+    private static final MemoryLayout MATRIX_VIEW_LAYOUT = MemoryLayout.structLayout(
+        JAVA_INT, JAVA_INT, ADDRESS, JAVA_LONG, JAVA_INT, JAVA_INT
+    );
+
+    private final NativeRuntime owner;
+    private final MethodHandle createScene;
+    private final MethodHandle destroyScene;
+    private final MethodHandle updateScene;
+    private final MethodHandle createInstance;
+    private final MethodHandle destroyInstance;
+    private final MethodHandle setTransform;
+    private final MethodHandle setVisible;
+    private final MethodHandle play;
+    private final MethodHandle stop;
+    private final MethodHandle getState;
+    private final MethodHandle getMatrices;
+    private final Set<Scene> scenes = new LinkedHashSet<>();
+
+    SceneRuntime(NativeRuntime owner, Linker linker, SymbolLookup symbols) {
+        this.owner = owner;
+        createScene = downcall(linker, symbols, "libmmd_scene_create", JAVA_INT, ADDRESS, ADDRESS, ADDRESS);
+        destroyScene = downcallVoid(linker, symbols, "libmmd_scene_destroy", ADDRESS);
+        updateScene = downcall(linker, symbols, "libmmd_scene_update", JAVA_INT, ADDRESS, JAVA_FLOAT, ADDRESS);
+        createInstance = downcall(
+            linker,
+            symbols,
+            "libmmd_model_instance_create",
+            JAVA_INT,
+            ADDRESS,
+            ADDRESS,
+            ADDRESS
+        );
+        destroyInstance = downcallVoid(linker, symbols, "libmmd_model_instance_destroy", ADDRESS);
+        setTransform = downcall(
+            linker,
+            symbols,
+            "libmmd_model_instance_set_transform",
+            JAVA_INT,
+            ADDRESS,
+            ADDRESS
+        );
+        setVisible = downcall(
+            linker,
+            symbols,
+            "libmmd_model_instance_set_visible",
+            JAVA_INT,
+            ADDRESS,
+            JAVA_INT
+        );
+        play = downcall(
+            linker,
+            symbols,
+            "libmmd_model_instance_play",
+            JAVA_INT,
+            ADDRESS,
+            ADDRESS,
+            JAVA_INT,
+            JAVA_FLOAT
+        );
+        stop = downcall(
+            linker,
+            symbols,
+            "libmmd_model_instance_stop",
+            JAVA_INT,
+            ADDRESS,
+            JAVA_FLOAT
+        );
+        getState = downcall(
+            linker,
+            symbols,
+            "libmmd_model_instance_get_state",
+            JAVA_INT,
+            ADDRESS,
+            ADDRESS
+        );
+        getMatrices = downcall(
+            linker,
+            symbols,
+            "libmmd_model_instance_get_matrices",
+            JAVA_INT,
+            ADDRESS,
+            ADDRESS
+        );
+    }
+
+    public Scene create() {
+        return create(0.25f);
+    }
+
+    public synchronized Scene create(float maximumDeltaSeconds) {
+        owner.ensureOpen();
+        requireFinitePositive(maximumDeltaSeconds, "maximumDeltaSeconds");
+        try (var arena = Arena.ofConfined()) {
+            var config = arena.allocate(CONFIG_LAYOUT);
+            header(config, CONFIG_LAYOUT);
+            config.set(JAVA_FLOAT, 8, maximumDeltaSeconds);
+            var output = arena.allocate(ADDRESS);
+            var status = (int) createScene.invokeExact(owner.handle(), config, output);
+            check(status, "Unable to create native scene");
+            var handle = output.get(ADDRESS, 0);
+            if (handle.equals(MemorySegment.NULL)) throw new IllegalStateException("libmmd returned a null scene");
+            var scene = new Scene(this, handle);
+            scenes.add(scene);
+            return scene;
+        } catch (RuntimeException failure) {
+            throw failure;
+        } catch (Throwable failure) {
+            throw new IllegalStateException("Unable to call native scene creation", failure);
+        }
+    }
+
+    synchronized boolean hasOpenScenes() {
+        return !scenes.isEmpty();
+    }
+
+    private synchronized void closeScene(Scene scene, MemorySegment handle) {
+        try {
+            destroyScene.invokeExact(handle);
+            scenes.remove(scene);
+        } catch (Throwable failure) {
+            throw new IllegalStateException("Unable to destroy native scene", failure);
+        }
+    }
+
+    private UpdateInfo update(MemorySegment scene, float deltaSeconds) {
+        requireFiniteNonNegative(deltaSeconds, "deltaSeconds");
+        try (var arena = Arena.ofConfined()) {
+            var output = arena.allocate(UPDATE_LAYOUT);
+            header(output, UPDATE_LAYOUT);
+            var status = (int) updateScene.invokeExact(scene, deltaSeconds, output);
+            check(status, "Unable to update native scene");
+            return new UpdateInfo(
+                output.get(JAVA_LONG, 8),
+                output.get(JAVA_INT, 16),
+                output.get(JAVA_INT, 20),
+                output.get(JAVA_INT, 24) != 0,
+                output.get(JAVA_FLOAT, 32),
+                output.get(JAVA_FLOAT, 36)
+            );
+        } catch (RuntimeException failure) {
+            throw failure;
+        } catch (Throwable failure) {
+            throw new IllegalStateException("Unable to call native scene update", failure);
+        }
+    }
+
+    private MemorySegment createInstance(MemorySegment scene, NativeRuntime.Model model) {
+        try (var arena = Arena.ofConfined()) {
+            var output = arena.allocate(ADDRESS);
+            var status = (int) createInstance.invokeExact(scene, model.nativeHandle(), output);
+            check(status, "Unable to create native model instance");
+            var handle = output.get(ADDRESS, 0);
+            if (handle.equals(MemorySegment.NULL)) throw new IllegalStateException("libmmd returned a null model instance");
+            return handle;
+        } catch (RuntimeException failure) {
+            throw failure;
+        } catch (Throwable failure) {
+            throw new IllegalStateException("Unable to call native model instance creation", failure);
+        }
+    }
+
+    private void destroyInstance(MemorySegment instance) {
+        try {
+            destroyInstance.invokeExact(instance);
+        } catch (Throwable failure) {
+            throw new IllegalStateException("Unable to destroy native model instance", failure);
+        }
+    }
+
+    private void setTransform(MemorySegment instance, Transform transform) {
+        try (var arena = Arena.ofConfined()) {
+            var value = arena.allocate(TRANSFORM_LAYOUT);
+            writeVector(value, 0, transform.position());
+            writeQuaternion(value, 12, transform.rotation());
+            writeVector(value, 28, transform.scale());
+            var status = (int) setTransform.invokeExact(instance, value);
+            check(status, "Unable to set native model transform");
+        } catch (RuntimeException failure) {
+            throw failure;
+        } catch (Throwable failure) {
+            throw new IllegalStateException("Unable to call native model transform update", failure);
+        }
+    }
+
+    private void setVisible(MemorySegment instance, boolean visible) {
+        try {
+            var status = (int) setVisible.invokeExact(instance, visible ? 1 : 0);
+            check(status, "Unable to set native model visibility");
+        } catch (RuntimeException failure) {
+            throw failure;
+        } catch (Throwable failure) {
+            throw new IllegalStateException("Unable to call native model visibility update", failure);
+        }
+    }
+
+    private void play(MemorySegment instance, NativeRuntime.Motion motion, boolean looping, float fadeSeconds) {
+        requireFiniteNonNegative(fadeSeconds, "fadeSeconds");
+        try {
+            var status = (int) play.invokeExact(instance, motion.nativeHandle(), looping ? 1 : 0, fadeSeconds);
+            check(status, "Unable to play native animation");
+        } catch (RuntimeException failure) {
+            throw failure;
+        } catch (Throwable failure) {
+            throw new IllegalStateException("Unable to call native animation playback", failure);
+        }
+    }
+
+    private void stop(MemorySegment instance, float fadeSeconds) {
+        requireFiniteNonNegative(fadeSeconds, "fadeSeconds");
+        try {
+            var status = (int) stop.invokeExact(instance, fadeSeconds);
+            check(status, "Unable to stop native animation");
+        } catch (RuntimeException failure) {
+            throw failure;
+        } catch (Throwable failure) {
+            throw new IllegalStateException("Unable to call native animation stop", failure);
+        }
+    }
+
+    private InstanceState state(MemorySegment instance) {
+        try (var arena = Arena.ofConfined()) {
+            var output = arena.allocate(STATE_LAYOUT);
+            header(output, STATE_LAYOUT);
+            var status = (int) getState.invokeExact(instance, output);
+            check(status, "Unable to query native model instance");
+            return new InstanceState(
+                new Transform(vector(output, 8), quaternion(output, 20), vector(output, 36)),
+                output.get(JAVA_INT, 48) != 0,
+                output.get(JAVA_INT, 52) != 0,
+                output.get(JAVA_INT, 56) != 0,
+                output.get(JAVA_FLOAT, 64),
+                output.get(JAVA_FLOAT, 68)
+            );
+        } catch (RuntimeException failure) {
+            throw failure;
+        } catch (Throwable failure) {
+            throw new IllegalStateException("Unable to call native model instance query", failure);
+        }
+    }
+
+    private MatrixView matrices(ModelInstance instance, MemorySegment handle) {
+        try (var arena = Arena.ofConfined()) {
+            var output = arena.allocate(MATRIX_VIEW_LAYOUT);
+            header(output, MATRIX_VIEW_LAYOUT);
+            var status = (int) getMatrices.invokeExact(handle, output);
+            check(status, "Unable to query native model matrices");
+            var floatCount = output.get(JAVA_LONG, 16);
+            var boneCount = output.get(JAVA_INT, 24);
+            var matrixStride = output.get(JAVA_INT, 28);
+            if (floatCount != Math.multiplyExact((long) boneCount, matrixStride) || matrixStride != 16) {
+                throw new IllegalStateException("libmmd returned an inconsistent model matrix view");
+            }
+            var data = output.get(ADDRESS, 8).reinterpret(Math.multiplyExact(floatCount, Float.BYTES)).asReadOnly();
+            return new MatrixView(instance, data, boneCount, matrixStride);
+        } catch (RuntimeException failure) {
+            throw failure;
+        } catch (Throwable failure) {
+            throw new IllegalStateException("Unable to call native model matrix query", failure);
+        }
+    }
+
+    private void check(int status, String operation) throws Throwable {
+        if (status == 0) return;
+        var message = owner.errorMessage(operation, status);
+        throw switch (status) {
+            case 1 -> new IllegalArgumentException(message);
+            case 6 -> new UnsupportedOperationException(message);
+            default -> new IllegalStateException(message);
+        };
+    }
+
+    private static void header(MemorySegment segment, MemoryLayout layout) {
+        segment.set(JAVA_INT, 0, NativeRuntime.ABI_VERSION);
+        segment.set(JAVA_INT, 4, Math.toIntExact(layout.byteSize()));
+    }
+
+    private static void writeVector(MemorySegment segment, long offset, NativeRuntime.Vector3 value) {
+        Objects.requireNonNull(value, "value");
+        segment.set(JAVA_FLOAT, offset, value.x());
+        segment.set(JAVA_FLOAT, offset + 4, value.y());
+        segment.set(JAVA_FLOAT, offset + 8, value.z());
+    }
+
+    private static void writeQuaternion(MemorySegment segment, long offset, NativeRuntime.Quaternion value) {
+        Objects.requireNonNull(value, "value");
+        segment.set(JAVA_FLOAT, offset, value.x());
+        segment.set(JAVA_FLOAT, offset + 4, value.y());
+        segment.set(JAVA_FLOAT, offset + 8, value.z());
+        segment.set(JAVA_FLOAT, offset + 12, value.w());
+    }
+
+    private static NativeRuntime.Vector3 vector(MemorySegment segment, long offset) {
+        return new NativeRuntime.Vector3(
+            segment.get(JAVA_FLOAT, offset),
+            segment.get(JAVA_FLOAT, offset + 4),
+            segment.get(JAVA_FLOAT, offset + 8)
+        );
+    }
+
+    private static NativeRuntime.Quaternion quaternion(MemorySegment segment, long offset) {
+        return new NativeRuntime.Quaternion(
+            segment.get(JAVA_FLOAT, offset),
+            segment.get(JAVA_FLOAT, offset + 4),
+            segment.get(JAVA_FLOAT, offset + 8),
+            segment.get(JAVA_FLOAT, offset + 12)
+        );
+    }
+
+    private static void requireFinitePositive(float value, String name) {
+        if (!Float.isFinite(value) || value <= 0.0f) throw new IllegalArgumentException(name + " must be finite and positive");
+    }
+
+    private static void requireFiniteNonNegative(float value, String name) {
+        if (!Float.isFinite(value) || value < 0.0f) throw new IllegalArgumentException(name + " must be finite and non-negative");
+    }
+
+    private static MethodHandle downcall(
+        Linker linker,
+        SymbolLookup symbols,
+        String name,
+        MemoryLayout result,
+        MemoryLayout... arguments
+    ) {
+        var symbol = symbols.find(name).orElseThrow(() -> new IllegalStateException("Missing native symbol " + name));
+        return linker.downcallHandle(symbol, FunctionDescriptor.of(result, arguments));
+    }
+
+    private static MethodHandle downcallVoid(
+        Linker linker,
+        SymbolLookup symbols,
+        String name,
+        MemoryLayout... arguments
+    ) {
+        var symbol = symbols.find(name).orElseThrow(() -> new IllegalStateException("Missing native symbol " + name));
+        return linker.downcallHandle(symbol, FunctionDescriptor.ofVoid(arguments));
+    }
+
+    public record Transform(
+        NativeRuntime.Vector3 position,
+        NativeRuntime.Quaternion rotation,
+        NativeRuntime.Vector3 scale
+    ) {
+        public static final Transform IDENTITY = new Transform(
+            new NativeRuntime.Vector3(0.0f, 0.0f, 0.0f),
+            NativeRuntime.Quaternion.IDENTITY,
+            new NativeRuntime.Vector3(1.0f, 1.0f, 1.0f)
+        );
+
+        public Transform {
+            Objects.requireNonNull(position, "position");
+            Objects.requireNonNull(rotation, "rotation");
+            Objects.requireNonNull(scale, "scale");
+        }
+    }
+
+    public record UpdateInfo(
+        long frameIndex,
+        int instanceCount,
+        int animatedInstanceCount,
+        boolean droppedTime,
+        float deltaSeconds,
+        float totalSeconds
+    ) {}
+
+    public record InstanceState(
+        Transform transform,
+        boolean visible,
+        boolean playing,
+        boolean looping,
+        float playbackSeconds,
+        float transitionWeight
+    ) {}
+
+    public static final class MatrixView {
+        private final ModelInstance owner;
+        private final MemorySegment data;
+        private final int boneCount;
+        private final int matrixStride;
+
+        private MatrixView(ModelInstance owner, MemorySegment data, int boneCount, int matrixStride) {
+            this.owner = owner;
+            this.data = data;
+            this.boneCount = boneCount;
+            this.matrixStride = matrixStride;
+        }
+
+        public MemorySegment data() {
+            owner.ensureOpen();
+            return data;
+        }
+
+        public int boneCount() {
+            owner.ensureOpen();
+            return boneCount;
+        }
+
+        public int matrixStride() {
+            owner.ensureOpen();
+            return matrixStride;
+        }
+    }
+
+    public static final class Scene implements AutoCloseable {
+        private final SceneRuntime owner;
+        private final Set<ModelInstance> instances = new LinkedHashSet<>();
+        private MemorySegment handle;
+
+        private Scene(SceneRuntime owner, MemorySegment handle) {
+            this.owner = owner;
+            this.handle = handle;
+        }
+
+        public synchronized ModelInstance createInstance(NativeRuntime.Model model) {
+            ensureOpen();
+            Objects.requireNonNull(model, "model");
+            if (model.runtime() != owner.owner) throw new IllegalArgumentException("Model and scene must share a runtime");
+            model.retainInstance();
+            try {
+                var instance = new ModelInstance(this, model, owner.createInstance(handle, model));
+                instances.add(instance);
+                return instance;
+            } catch (RuntimeException failure) {
+                model.releaseInstance();
+                throw failure;
+            }
+        }
+
+        public synchronized UpdateInfo update(float deltaSeconds) {
+            ensureOpen();
+            var info = owner.update(handle, deltaSeconds);
+            for (var instance : instances) instance.refreshMotion();
+            return info;
+        }
+
+        public boolean isClosed() {
+            return handle.equals(MemorySegment.NULL);
+        }
+
+        @Override
+        public synchronized void close() {
+            if (isClosed()) return;
+            for (var instance : List.copyOf(instances)) instance.close();
+            owner.closeScene(this, handle);
+            handle = MemorySegment.NULL;
+        }
+
+        private synchronized void remove(ModelInstance instance) {
+            instances.remove(instance);
+        }
+
+        private void ensureOpen() {
+            if (isClosed()) throw new IllegalStateException("libmmd scene is closed");
+            owner.owner.ensureOpen();
+        }
+    }
+
+    public static final class ModelInstance implements AutoCloseable {
+        private final Scene scene;
+        private final NativeRuntime.Model model;
+        private MemorySegment handle;
+        private NativeRuntime.Motion motion;
+        private boolean looping;
+
+        private ModelInstance(Scene scene, NativeRuntime.Model model, MemorySegment handle) {
+            this.scene = scene;
+            this.model = model;
+            this.handle = handle;
+        }
+
+        public void setTransform(Transform transform) {
+            ensureOpen();
+            scene.owner.setTransform(handle, Objects.requireNonNull(transform, "transform"));
+        }
+
+        public void setVisible(boolean visible) {
+            ensureOpen();
+            scene.owner.setVisible(handle, visible);
+        }
+
+        public synchronized void play(NativeRuntime.Motion motion, boolean looping, float fadeSeconds) {
+            ensureOpen();
+            Objects.requireNonNull(motion, "motion");
+            if (motion.model() != model) throw new IllegalArgumentException("Motion and model instance must share a model");
+            motion.retainInstance();
+            try {
+                scene.owner.play(handle, motion, looping, fadeSeconds);
+            } catch (RuntimeException failure) {
+                motion.releaseInstance();
+                throw failure;
+            }
+            releaseMotion();
+            this.motion = motion;
+            this.looping = looping;
+        }
+
+        public synchronized void stop(float fadeSeconds) {
+            ensureOpen();
+            scene.owner.stop(handle, fadeSeconds);
+            releaseMotion();
+        }
+
+        public synchronized InstanceState state() {
+            ensureOpen();
+            var state = scene.owner.state(handle);
+            if (!state.playing()) releaseMotion();
+            return state;
+        }
+
+        public MatrixView matrices() {
+            ensureOpen();
+            return scene.owner.matrices(this, handle);
+        }
+
+        public boolean isClosed() {
+            return handle.equals(MemorySegment.NULL);
+        }
+
+        @Override
+        public synchronized void close() {
+            if (isClosed()) return;
+            scene.owner.destroyInstance(handle);
+            handle = MemorySegment.NULL;
+            releaseMotion();
+            model.releaseInstance();
+            scene.remove(this);
+        }
+
+        private synchronized void refreshMotion() {
+            if (motion != null && !looping && !scene.owner.state(handle).playing()) releaseMotion();
+        }
+
+        private void releaseMotion() {
+            if (motion == null) return;
+            motion.releaseInstance();
+            motion = null;
+            looping = false;
+        }
+
+        private void ensureOpen() {
+            if (isClosed()) throw new IllegalStateException("libmmd model instance is closed");
+            scene.ensureOpen();
+            model.nativeHandle();
+        }
+    }
+}

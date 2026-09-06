@@ -178,5 +178,7 @@ bool MotionClip::apply(const float time_seconds, const bool looping, Pose& pose)
 std::uint32_t MotionClip::duration_frames() const noexcept { return duration_frames_; }
 std::uint32_t MotionClip::bound_bone_count() const noexcept { return static_cast<std::uint32_t>(tracks_.size()); }
 std::uint32_t MotionClip::bound_ik_count() const noexcept { return static_cast<std::uint32_t>(ik_tracks_.size()); }
+std::uint32_t MotionClip::bone_count() const noexcept { return bone_count_; }
+float MotionClip::duration_seconds() const noexcept { return static_cast<float>(duration_frames_) / frame_rate; }
 
 }

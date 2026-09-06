@@ -191,6 +191,48 @@ int main() {
     assert(libmmd_motion_apply(motion, 0.0f, 0, pose) == LIBMMD_STATUS_OK);
     assert(libmmd_pose_get_matrices(pose, &matrices) == LIBMMD_STATUS_OK);
     assert(matrices.data[12] == 2.0f);
+    libmmd_scene* scene = nullptr;
+    const libmmd_scene_config scene_config{
+        .abi_version = LIBMMD_ABI_VERSION,
+        .struct_size = sizeof(libmmd_scene_config),
+        .maximum_delta_seconds = 0.1f,
+        .flags = 0,
+    };
+    assert(libmmd_scene_create(runtime, &scene_config, &scene) == LIBMMD_STATUS_OK);
+    assert(scene != nullptr);
+    libmmd_model_instance* instance = nullptr;
+    assert(libmmd_model_instance_create(scene, model, &instance) == LIBMMD_STATUS_OK);
+    assert(instance != nullptr);
+    const libmmd_instance_transform transform{
+        .position = {1.0f, 2.0f, 3.0f},
+        .rotation = {0.0f, 0.0f, 0.0f, 2.0f},
+        .scale = {0.1f, 0.1f, 0.1f},
+    };
+    assert(libmmd_model_instance_set_transform(instance, &transform) == LIBMMD_STATUS_OK);
+    assert(libmmd_model_instance_play(instance, motion, 1, 0.2f) == LIBMMD_STATUS_OK);
+    libmmd_scene_update_info update{};
+    update.abi_version = LIBMMD_ABI_VERSION;
+    update.struct_size = sizeof(libmmd_scene_update_info);
+    assert(libmmd_scene_update(scene, 0.15f, &update) == LIBMMD_STATUS_OK);
+    assert(update.frame_index == 1);
+    assert(update.instance_count == 1);
+    assert(update.animated_instance_count == 1);
+    assert(update.dropped_time == 1);
+    assert(update.delta_seconds == 0.1f);
+    libmmd_instance_state state{};
+    state.abi_version = LIBMMD_ABI_VERSION;
+    state.struct_size = sizeof(libmmd_instance_state);
+    assert(libmmd_model_instance_get_state(instance, &state) == LIBMMD_STATUS_OK);
+    assert(state.transform.position[1] == 2.0f);
+    assert(state.transform.rotation[3] == 1.0f);
+    assert(state.visible == 1);
+    assert(state.playing == 1);
+    assert(state.looping == 1);
+    assert(state.transition_weight > 0.0f && state.transition_weight < 1.0f);
+    assert(libmmd_model_instance_get_matrices(instance, &matrices) == LIBMMD_STATUS_OK);
+    assert(matrices.bone_count == 1);
+    assert(libmmd_model_instance_stop(instance, 0.1f) == LIBMMD_STATUS_OK);
+    libmmd_scene_destroy(scene);
     libmmd_motion_destroy(motion);
     libmmd_pose_destroy(pose);
     libmmd_model_destroy(model);

@@ -6,6 +6,7 @@
 #include "native/libmmd/src/pose.hpp"
 #include "native/libmmd/src/render_mesh.hpp"
 #include "native/libmmd/src/runtime.hpp"
+#include "native/libmmd/src/scene.hpp"
 #include "native/libmmd/src/skeleton.hpp"
 
 #include <algorithm>
@@ -63,6 +64,7 @@ struct libmmd_runtime {
     explicit libmmd_runtime(const std::uint32_t workers) : value(workers) {}
 
     libmmd::Runtime value;
+    std::unordered_set<libmmd_scene*> scenes;
     std::unordered_set<libmmd_physics_world*> physics_worlds;
 };
 
@@ -72,6 +74,7 @@ struct libmmd_model {
     libmmd::RenderMesh render_mesh;
     std::vector<libmmd::pmx::Bone> bones;
     std::optional<libmmd::pmx::Model> source;
+    std::unordered_set<libmmd_model_instance*> instances;
 };
 
 struct libmmd_pose {
@@ -82,6 +85,20 @@ struct libmmd_pose {
 struct libmmd_motion {
     libmmd::MotionClip value;
     const libmmd_model* model;
+    std::unordered_set<libmmd_model_instance*> instances;
+};
+
+struct libmmd_scene {
+    std::unique_ptr<libmmd::Scene> value;
+    libmmd_runtime* runtime;
+    std::unordered_set<libmmd_model_instance*> instances;
+};
+
+struct libmmd_model_instance {
+    libmmd::ModelInstance* value;
+    libmmd_scene* scene;
+    libmmd_model* model;
+    libmmd_motion* motion;
 };
 
 struct libmmd_physics_world {
@@ -125,6 +142,36 @@ libmmd_status physics_call(libmmd_runtime* runtime, Action&& action) {
         runtime->value.set_error("unknown physics failure");
         return LIBMMD_STATUS_INTERNAL_ERROR;
     }
+}
+
+template <typename Action>
+libmmd_status scene_call(libmmd_runtime* runtime, Action&& action) {
+    try {
+        action();
+        runtime->value.set_error({});
+        return LIBMMD_STATUS_OK;
+    } catch (const std::invalid_argument& error) {
+        runtime->value.set_error(error.what());
+        return LIBMMD_STATUS_INVALID_ARGUMENT;
+    } catch (const std::bad_alloc&) {
+        runtime->value.set_error("scene allocation failed");
+        return LIBMMD_STATUS_OUT_OF_MEMORY;
+    } catch (const std::exception& error) {
+        runtime->value.set_error(error.what());
+        return LIBMMD_STATUS_INTERNAL_ERROR;
+    } catch (...) {
+        runtime->value.set_error("unknown scene failure");
+        return LIBMMD_STATUS_INTERNAL_ERROR;
+    }
+}
+
+libmmd_scene_config default_scene_config() {
+    return {
+        .abi_version = LIBMMD_ABI_VERSION,
+        .struct_size = sizeof(libmmd_scene_config),
+        .maximum_delta_seconds = 0.25f,
+        .flags = 0,
+    };
 }
 
 libmmd_physics_world_config default_physics_config(const libmmd_runtime& runtime) {
@@ -189,6 +236,9 @@ libmmd_status libmmd_runtime_create(const libmmd_runtime_config* config, libmmd_
 
 void libmmd_runtime_destroy(libmmd_runtime* runtime) {
     if (runtime != nullptr) {
+        while (!runtime->scenes.empty()) {
+            libmmd_scene_destroy(*runtime->scenes.begin());
+        }
         while (!runtime->physics_worlds.empty()) {
             libmmd_physics_world_destroy(*runtime->physics_worlds.begin());
         }
@@ -250,6 +300,7 @@ libmmd_status libmmd_model_load_pack(
             std::get<libmmd::RenderMesh>(std::move(render_result)),
             std::get<std::vector<libmmd::pmx::Bone>>(std::move(skeleton_result)),
             std::nullopt,
+            {},
         };
         runtime->value.set_error({});
         return LIBMMD_STATUS_OK;
@@ -301,6 +352,11 @@ libmmd_status libmmd_model_load_pmx(
 }
 
 void libmmd_model_destroy(libmmd_model* model) {
+    if (model != nullptr) {
+        while (!model->instances.empty()) {
+            libmmd_model_instance_destroy(*model->instances.begin());
+        }
+    }
     delete model;
 }
 
@@ -536,6 +592,7 @@ libmmd_status libmmd_motion_create_vmd(
         *output = new libmmd_motion{
             libmmd::MotionClip(model->bones, std::get<libmmd::vmd::Motion>(result)),
             model,
+            {},
         };
         global_error.clear();
         return LIBMMD_STATUS_OK;
@@ -552,6 +609,14 @@ libmmd_status libmmd_motion_create_vmd(
 }
 
 void libmmd_motion_destroy(libmmd_motion* motion) {
+    if (motion != nullptr) {
+        while (!motion->instances.empty()) {
+            auto* instance = *motion->instances.begin();
+            instance->value->animation().detach(motion->value);
+            instance->motion = nullptr;
+            motion->instances.erase(instance);
+        }
+    }
     delete motion;
 }
 
@@ -581,6 +646,205 @@ libmmd_status libmmd_motion_apply(
     return motion->value.apply(time_seconds, looping == 1, pose->value)
         ? LIBMMD_STATUS_OK
         : LIBMMD_STATUS_INVALID_ARGUMENT;
+}
+
+libmmd_status libmmd_scene_create(
+    libmmd_runtime* runtime,
+    const libmmd_scene_config* config,
+    libmmd_scene** output) {
+    if (runtime == nullptr || output == nullptr) return LIBMMD_STATUS_INVALID_ARGUMENT;
+    *output = nullptr;
+    auto resolved = default_scene_config();
+    if (config != nullptr) {
+        if (config->struct_size < sizeof(libmmd_scene_config)) {
+            runtime->value.set_error("scene config is truncated");
+            return LIBMMD_STATUS_INVALID_ARGUMENT;
+        }
+        if (config->abi_version != LIBMMD_ABI_VERSION) return LIBMMD_STATUS_UNSUPPORTED_ABI;
+        resolved = *config;
+    }
+    if (resolved.flags != 0) {
+        runtime->value.set_error("scene flags are unsupported");
+        return LIBMMD_STATUS_UNSUPPORTED_FEATURE;
+    }
+    return scene_call(runtime, [&] {
+        auto scene = std::make_unique<libmmd_scene>();
+        scene->runtime = runtime;
+        scene->value = std::make_unique<libmmd::Scene>(resolved.maximum_delta_seconds);
+        *output = scene.release();
+        runtime->scenes.insert(*output);
+    });
+}
+
+void libmmd_scene_destroy(libmmd_scene* scene) {
+    if (scene == nullptr) return;
+    while (!scene->instances.empty()) libmmd_model_instance_destroy(*scene->instances.begin());
+    scene->runtime->scenes.erase(scene);
+    delete scene;
+}
+
+libmmd_status libmmd_scene_update(
+    libmmd_scene* scene,
+    const float delta_seconds,
+    libmmd_scene_update_info* output) {
+    if (scene == nullptr || output == nullptr || output->struct_size < sizeof(libmmd_scene_update_info)) {
+        return LIBMMD_STATUS_INVALID_ARGUMENT;
+    }
+    if (output->abi_version != LIBMMD_ABI_VERSION) return LIBMMD_STATUS_UNSUPPORTED_ABI;
+    const auto size = output->struct_size;
+    return scene_call(scene->runtime, [&] {
+        const auto step = scene->value->update(delta_seconds);
+        for (auto* instance : scene->instances) {
+            if (instance->motion != nullptr && !instance->value->animation().uses(instance->motion->value)) {
+                instance->motion->instances.erase(instance);
+                instance->motion = nullptr;
+            }
+        }
+        std::memset(output, 0, sizeof(libmmd_scene_update_info));
+        output->abi_version = LIBMMD_ABI_VERSION;
+        output->struct_size = size;
+        output->frame_index = step.frame_index;
+        output->instance_count = step.instance_count;
+        output->animated_instance_count = step.animated_instance_count;
+        output->dropped_time = step.dropped_time ? 1u : 0u;
+        output->delta_seconds = step.delta_seconds;
+        output->total_seconds = step.total_seconds;
+    });
+}
+
+libmmd_status libmmd_model_instance_create(
+    libmmd_scene* scene,
+    libmmd_model* model,
+    libmmd_model_instance** output) {
+    if (scene == nullptr || model == nullptr || output == nullptr) return LIBMMD_STATUS_INVALID_ARGUMENT;
+    *output = nullptr;
+    return scene_call(scene->runtime, [&] {
+        auto instance = std::make_unique<libmmd_model_instance>();
+        instance->scene = scene;
+        instance->model = model;
+        instance->motion = nullptr;
+        instance->value = &scene->value->create_instance(model->bones);
+        *output = instance.release();
+        scene->instances.insert(*output);
+        model->instances.insert(*output);
+    });
+}
+
+void libmmd_model_instance_destroy(libmmd_model_instance* instance) {
+    if (instance == nullptr) return;
+    if (instance->motion != nullptr) instance->motion->instances.erase(instance);
+    instance->model->instances.erase(instance);
+    instance->scene->instances.erase(instance);
+    instance->scene->value->destroy_instance(*instance->value);
+    delete instance;
+}
+
+libmmd_status libmmd_model_instance_set_transform(
+    libmmd_model_instance* instance,
+    const libmmd_instance_transform* transform) {
+    if (instance == nullptr || transform == nullptr) return LIBMMD_STATUS_INVALID_ARGUMENT;
+    const libmmd::InstanceTransform value{
+        .position = {transform->position[0], transform->position[1], transform->position[2]},
+        .rotation = {transform->rotation[0], transform->rotation[1], transform->rotation[2], transform->rotation[3]},
+        .scale = {transform->scale[0], transform->scale[1], transform->scale[2]},
+    };
+    if (!instance->value->set_transform(value)) {
+        instance->scene->runtime->value.set_error("instance transform is invalid");
+        return LIBMMD_STATUS_INVALID_ARGUMENT;
+    }
+    instance->scene->runtime->value.set_error({});
+    return LIBMMD_STATUS_OK;
+}
+
+libmmd_status libmmd_model_instance_set_visible(
+    libmmd_model_instance* instance,
+    const std::uint32_t visible) {
+    if (instance == nullptr || visible > 1) return LIBMMD_STATUS_INVALID_ARGUMENT;
+    instance->value->set_visible(visible == 1);
+    return LIBMMD_STATUS_OK;
+}
+
+libmmd_status libmmd_model_instance_play(
+    libmmd_model_instance* instance,
+    libmmd_motion* motion,
+    const std::uint32_t looping,
+    const float fade_seconds) {
+    if (instance == nullptr || motion == nullptr || looping > 1 || motion->model != instance->model) {
+        return LIBMMD_STATUS_INVALID_ARGUMENT;
+    }
+    if (!instance->value->animation().play(motion->value, looping == 1, fade_seconds)) {
+        instance->scene->runtime->value.set_error("animation playback arguments are invalid");
+        return LIBMMD_STATUS_INVALID_ARGUMENT;
+    }
+    if (instance->motion != nullptr) instance->motion->instances.erase(instance);
+    instance->motion = motion;
+    motion->instances.insert(instance);
+    instance->scene->runtime->value.set_error({});
+    return LIBMMD_STATUS_OK;
+}
+
+libmmd_status libmmd_model_instance_stop(
+    libmmd_model_instance* instance,
+    const float fade_seconds) {
+    if (instance == nullptr) return LIBMMD_STATUS_INVALID_ARGUMENT;
+    if (!instance->value->animation().stop(fade_seconds)) {
+        instance->scene->runtime->value.set_error("animation fade is invalid");
+        return LIBMMD_STATUS_INVALID_ARGUMENT;
+    }
+    if (instance->motion != nullptr) instance->motion->instances.erase(instance);
+    instance->motion = nullptr;
+    instance->scene->runtime->value.set_error({});
+    return LIBMMD_STATUS_OK;
+}
+
+libmmd_status libmmd_model_instance_get_state(
+    const libmmd_model_instance* instance,
+    libmmd_instance_state* output) {
+    if (instance == nullptr || output == nullptr || output->struct_size < sizeof(libmmd_instance_state)) {
+        return LIBMMD_STATUS_INVALID_ARGUMENT;
+    }
+    if (output->abi_version != LIBMMD_ABI_VERSION) return LIBMMD_STATUS_UNSUPPORTED_ABI;
+    const auto size = output->struct_size;
+    const auto& transform = instance->value->transform();
+    const auto& animation = instance->value->animation();
+    std::memset(output, 0, sizeof(libmmd_instance_state));
+    output->abi_version = LIBMMD_ABI_VERSION;
+    output->struct_size = size;
+    output->transform.position[0] = transform.position.x;
+    output->transform.position[1] = transform.position.y;
+    output->transform.position[2] = transform.position.z;
+    output->transform.rotation[0] = transform.rotation.x;
+    output->transform.rotation[1] = transform.rotation.y;
+    output->transform.rotation[2] = transform.rotation.z;
+    output->transform.rotation[3] = transform.rotation.w;
+    output->transform.scale[0] = transform.scale.x;
+    output->transform.scale[1] = transform.scale.y;
+    output->transform.scale[2] = transform.scale.z;
+    output->visible = instance->value->visible() ? 1u : 0u;
+    output->playing = animation.playing() ? 1u : 0u;
+    output->looping = animation.looping() ? 1u : 0u;
+    output->playback_seconds = animation.playback_seconds();
+    output->transition_weight = animation.transition_weight();
+    return LIBMMD_STATUS_OK;
+}
+
+libmmd_status libmmd_model_instance_get_matrices(
+    const libmmd_model_instance* instance,
+    libmmd_matrix_view* output) {
+    if (instance == nullptr || output == nullptr || output->struct_size < sizeof(libmmd_matrix_view)) {
+        return LIBMMD_STATUS_INVALID_ARGUMENT;
+    }
+    if (output->abi_version != LIBMMD_ABI_VERSION) return LIBMMD_STATUS_UNSUPPORTED_ABI;
+    const auto matrices = instance->value->animation().pose().skinning_matrices();
+    const auto size = output->struct_size;
+    std::memset(output, 0, sizeof(libmmd_matrix_view));
+    output->abi_version = LIBMMD_ABI_VERSION;
+    output->struct_size = size;
+    output->data = matrices.data();
+    output->float_count = matrices.size();
+    output->bone_count = instance->value->animation().pose().bone_count();
+    output->matrix_stride = 16;
+    return LIBMMD_STATUS_OK;
 }
 
 libmmd_status libmmd_physics_world_create(

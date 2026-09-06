@@ -24,6 +24,8 @@ typedef struct libmmd_runtime libmmd_runtime;
 typedef struct libmmd_model libmmd_model;
 typedef struct libmmd_pose libmmd_pose;
 typedef struct libmmd_motion libmmd_motion;
+typedef struct libmmd_scene libmmd_scene;
+typedef struct libmmd_model_instance libmmd_model_instance;
 typedef struct libmmd_physics_world libmmd_physics_world;
 typedef struct libmmd_physics_body libmmd_physics_body;
 typedef struct libmmd_physics_joint libmmd_physics_joint;
@@ -147,6 +149,43 @@ typedef struct libmmd_motion_info {
     uint32_t bound_ik_count;
     uint32_t reserved;
 } libmmd_motion_info;
+
+typedef struct libmmd_scene_config {
+    uint32_t abi_version;
+    uint32_t struct_size;
+    float maximum_delta_seconds;
+    uint32_t flags;
+} libmmd_scene_config;
+
+typedef struct libmmd_instance_transform {
+    float position[3];
+    float rotation[4];
+    float scale[3];
+} libmmd_instance_transform;
+
+typedef struct libmmd_scene_update_info {
+    uint32_t abi_version;
+    uint32_t struct_size;
+    uint64_t frame_index;
+    uint32_t instance_count;
+    uint32_t animated_instance_count;
+    uint32_t dropped_time;
+    uint32_t reserved;
+    float delta_seconds;
+    float total_seconds;
+} libmmd_scene_update_info;
+
+typedef struct libmmd_instance_state {
+    uint32_t abi_version;
+    uint32_t struct_size;
+    libmmd_instance_transform transform;
+    uint32_t visible;
+    uint32_t playing;
+    uint32_t looping;
+    uint32_t reserved;
+    float playback_seconds;
+    float transition_weight;
+} libmmd_instance_state;
 
 typedef enum libmmd_physics_processor {
     LIBMMD_PHYSICS_PROCESSOR_AUTO = 0,
@@ -341,6 +380,40 @@ LIBMMD_API libmmd_status libmmd_motion_apply(
     float time_seconds,
     uint32_t looping,
     libmmd_pose* pose);
+LIBMMD_API libmmd_status libmmd_scene_create(
+    libmmd_runtime* runtime,
+    const libmmd_scene_config* config,
+    libmmd_scene** output);
+LIBMMD_API void libmmd_scene_destroy(libmmd_scene* scene);
+LIBMMD_API libmmd_status libmmd_scene_update(
+    libmmd_scene* scene,
+    float delta_seconds,
+    libmmd_scene_update_info* output);
+LIBMMD_API libmmd_status libmmd_model_instance_create(
+    libmmd_scene* scene,
+    libmmd_model* model,
+    libmmd_model_instance** output);
+LIBMMD_API void libmmd_model_instance_destroy(libmmd_model_instance* instance);
+LIBMMD_API libmmd_status libmmd_model_instance_set_transform(
+    libmmd_model_instance* instance,
+    const libmmd_instance_transform* transform);
+LIBMMD_API libmmd_status libmmd_model_instance_set_visible(
+    libmmd_model_instance* instance,
+    uint32_t visible);
+LIBMMD_API libmmd_status libmmd_model_instance_play(
+    libmmd_model_instance* instance,
+    libmmd_motion* motion,
+    uint32_t looping,
+    float fade_seconds);
+LIBMMD_API libmmd_status libmmd_model_instance_stop(
+    libmmd_model_instance* instance,
+    float fade_seconds);
+LIBMMD_API libmmd_status libmmd_model_instance_get_state(
+    const libmmd_model_instance* instance,
+    libmmd_instance_state* output);
+LIBMMD_API libmmd_status libmmd_model_instance_get_matrices(
+    const libmmd_model_instance* instance,
+    libmmd_matrix_view* output);
 LIBMMD_API libmmd_status libmmd_physics_world_create(
     libmmd_runtime* runtime,
     const libmmd_physics_world_config* config,

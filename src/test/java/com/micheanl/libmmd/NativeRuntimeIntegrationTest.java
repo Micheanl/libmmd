@@ -162,6 +162,29 @@ final class NativeRuntimeIntegrationTest {
                 )
             );
             pose.reset();
+            try (var scene = runtime.scenes().create(0.1f);
+                 var instance = scene.createInstance(model)) {
+                instance.setTransform(new SceneRuntime.Transform(
+                    new NativeRuntime.Vector3(1.0f, 2.0f, 3.0f),
+                    new NativeRuntime.Quaternion(0.0f, 0.0f, 0.0f, 2.0f),
+                    new NativeRuntime.Vector3(0.1f, 0.1f, 0.1f)
+                ));
+                instance.play(motion, true, 0.2f);
+                var update = scene.update(0.15f);
+                assertTrue(update.frameIndex() == 1);
+                assertTrue(update.instanceCount() == 1);
+                assertTrue(update.animatedInstanceCount() == 1);
+                assertTrue(update.droppedTime());
+                assertTrue(Math.abs(update.deltaSeconds() - 0.1f) < 0.0001f);
+                var state = instance.state();
+                assertTrue(state.visible());
+                assertTrue(state.playing());
+                assertTrue(state.looping());
+                assertTrue(state.transform().rotation().w() == 1.0f);
+                assertTrue(instance.matrices().boneCount() == info.boneCount());
+                assertThrows(IllegalStateException.class, motion::close);
+                instance.stop(0.1f);
+            }
             assertThrows(IllegalStateException.class, model::close);
             motion.close();
             assertTrue(motion.isClosed());
