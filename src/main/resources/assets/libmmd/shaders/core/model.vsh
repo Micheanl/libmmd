@@ -10,6 +10,10 @@ layout(location = 2) in vec4 Color;
 layout(location = 3) in vec4 Normal;
 layout(location = 4) in ivec4 BoneIndices;
 layout(location = 5) in vec4 BoneWeights;
+layout(location = 6) in vec4 InstanceModel0;
+layout(location = 7) in vec4 InstanceModel1;
+layout(location = 8) in vec4 InstanceModel2;
+layout(location = 9) in vec4 InstanceModel3;
 
 uniform samplerBuffer BoneTransforms;
 uniform samplerBuffer MorphOffsets;
@@ -51,9 +55,11 @@ void main() {
 		) * BoneWeights.w;
 	vec4 skinnedPosition = skinTransform * vec4(morphedPosition, 1.0);
 	skinnedPosition.xyz += texelFetch(SoftBodyOffsets, gl_VertexIndex).xyz;
-	gl_Position = ProjMat * ModelViewMat * skinnedPosition;
+	mat4 instanceModel = mat4(InstanceModel0, InstanceModel1, InstanceModel2, InstanceModel3);
+	vec4 worldPosition = instanceModel * skinnedPosition;
+	gl_Position = ProjMat * ModelViewMat * worldPosition;
 	texCoord = UV0 + vec2(primaryMorphOffset.w, secondaryMorphOffset.x);
 	vertexColor = Color;
-	vec3 skinnedNormal = normalize(mat3(skinTransform) * Normal.xyz);
+	vec3 skinnedNormal = normalize(mat3(instanceModel) * mat3(skinTransform) * Normal.xyz);
 	vertexNormal = normalize(transpose(inverse(mat3(ModelViewMat))) * skinnedNormal);
 }

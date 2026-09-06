@@ -1,4 +1,4 @@
-package com.micheanl.libmmd;
+package com.micheanl.libmmd.runtime;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;

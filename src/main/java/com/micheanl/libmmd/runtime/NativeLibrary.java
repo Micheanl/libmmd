@@ -1,4 +1,4 @@
-package com.micheanl.libmmd;
+package com.micheanl.libmmd.runtime;
 
 import java.io.IOException;
 import java.nio.file.Files;

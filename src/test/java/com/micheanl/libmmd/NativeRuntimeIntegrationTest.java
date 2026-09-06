@@ -1,5 +1,9 @@
 package com.micheanl.libmmd;
 
+import com.micheanl.libmmd.runtime.NativeRuntime;
+import com.micheanl.libmmd.runtime.PhysicsRuntime;
+import com.micheanl.libmmd.runtime.SceneRuntime;
+
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;

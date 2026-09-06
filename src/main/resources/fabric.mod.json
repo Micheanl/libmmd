@@ -6,12 +6,15 @@
 	"license": "CC0-1.0",
 	"icon": "assets/libmmd/icon.png",
 	"environment": "*",
+	"mixins": [
+		"libmmd.mixins.json"
+	],
 	"entrypoints": {
 		"main": [
 			"com.micheanl.libmmd.Engine"
 		],
 		"client": [
-			"com.micheanl.libmmd.ClientBootstrap"
+			"com.micheanl.libmmd.client.bootstrap.ClientBootstrap"
 		]
 	},
 	"depends": {

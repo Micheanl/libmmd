@@ -1,0 +1,74 @@
+package com.micheanl.libmmd.client.render;
+
+import com.micheanl.libmmd.client.model.ModelController;
+import com.micheanl.libmmd.runtime.SceneRuntime;
+
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.rendering.v1.FabricOrderedSubmitNodeCollector;
+import net.fabricmc.fabric.api.client.rendering.v1.SubmitRenderPhases;
+import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.SubmitNodeStorage;
+import net.minecraft.client.renderer.entity.state.AvatarRenderState;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.world.entity.EntityTypes;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
+@Environment(EnvType.CLIENT)
+public final class PlayerRenderManager implements AutoCloseable {
+    private final SceneRuntime.Scene scene;
+    private final ModelController models;
+    private final Map<Integer, PlayerInstance> instances = new HashMap<>();
+
+    public PlayerRenderManager(SceneRuntime.Scene scene, ModelController models) {
+        this.scene = scene;
+        this.models = models;
+    }
+
+    public synchronized boolean submit(
+        AvatarRenderState state,
+        SubmitNodeCollector collector,
+        CameraRenderState camera
+    ) {
+        if (!models.hasModel() || state.entityType != EntityTypes.PLAYER || state.isInvisibleToPlayer || state.isSpectator) {
+            return false;
+        }
+        if (!(collector instanceof SubmitNodeStorage storage)) return false;
+        if (!(storage.order(0) instanceof FabricOrderedSubmitNodeCollector ordered)) return false;
+        var instance = instances.computeIfAbsent(
+            state.id,
+            id -> new PlayerInstance(
+                scene,
+                models.model(),
+                models.motion(),
+                models.packPath(),
+                models.scale(),
+                models.verticalOffset()
+            )
+        );
+        if (!instance.update(state, camera)) return false;
+        for (var node : instance.nodes()) ordered.submitCustom(SubmitRenderPhases.SOLID, node);
+        return true;
+    }
+
+    public synchronized void clear() {
+        for (var instance : instances.values()) instance.close();
+        instances.clear();
+    }
+
+    public synchronized void retain(Set<Integer> activeIds) {
+        instances.entrySet().removeIf(entry -> {
+            if (activeIds.contains(entry.getKey())) return false;
+            entry.getValue().close();
+            return true;
+        });
+    }
+
+    @Override
+    public synchronized void close() {
+        clear();
+    }
+}
