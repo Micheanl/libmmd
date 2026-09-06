@@ -28,6 +28,53 @@ libmmd::pmx::Model falling_model() {
     return model;
 }
 
+void joint_models_through_api(libmmd_runtime* runtime, const libmmd_model_physics_config& config) {
+    for (std::uint8_t type = 1; type <= 5; ++type) {
+        auto source = falling_model();
+        libmmd::pmx::Joint joint;
+        joint.type = type;
+        joint.second_rigid_body_index = 0;
+        joint.position = source.bones.front().position;
+        source.joints.push_back(joint);
+        const auto pack = libmmd::pack::build(source, {});
+        libmmd_model* model = nullptr;
+        assert(libmmd_model_load_pack(runtime, pack.data(), pack.size(), &model) == LIBMMD_STATUS_OK);
+        libmmd_scene* scene = nullptr;
+        assert(libmmd_scene_create_with_physics(runtime, nullptr, &config, &scene) == LIBMMD_STATUS_OK);
+        libmmd_model_instance* instance = nullptr;
+        const auto status = libmmd_model_instance_create(scene, model, &instance);
+        libmmd_scene_update_info step{};
+        step.abi_version = LIBMMD_ABI_VERSION;
+        step.struct_size = sizeof(step);
+        if (type <= 2) {
+            assert(status == LIBMMD_STATUS_OK);
+            libmmd_matrix_view matrices{};
+            matrices.abi_version = LIBMMD_ABI_VERSION;
+            matrices.struct_size = sizeof(matrices);
+            assert(libmmd_model_instance_get_matrices(instance, &matrices) == LIBMMD_STATUS_OK);
+            const auto* borrowed = matrices.data;
+            for (int frame = 0; frame < 60; ++frame) {
+                assert(libmmd_scene_update(scene, 1.0f / 60.0f, &step) == LIBMMD_STATUS_OK);
+                assert(step.dropped_time == 0);
+            }
+            assert(step.instance_count == 1);
+            assert(std::abs(borrowed[13]) < 0.001f);
+            assert(libmmd_model_instance_reset_physics(instance) == LIBMMD_STATUS_OK);
+            assert(libmmd_model_instance_get_matrices(instance, &matrices) == LIBMMD_STATUS_OK);
+            assert(matrices.data == borrowed);
+            assert(std::abs(borrowed[13]) < 0.0001f);
+        } else {
+            assert(status == LIBMMD_STATUS_INVALID_ARGUMENT);
+            assert(instance == nullptr);
+            assert(std::strstr(libmmd_last_error(runtime), "joint") != nullptr);
+        }
+        libmmd_model_destroy(model);
+        assert(libmmd_scene_update(scene, 0.0f, &step) == LIBMMD_STATUS_OK);
+        assert(step.instance_count == 0);
+        libmmd_scene_destroy(scene);
+    }
+}
+
 }
 
 int main() {
@@ -131,6 +178,7 @@ int main() {
     libmmd_model_destroy(model);
     assert(libmmd_scene_update(scene, 0.0f, &step) == LIBMMD_STATUS_OK);
     assert(step.instance_count == 0);
+    joint_models_through_api(runtime, physics_config);
     libmmd_runtime_destroy(runtime);
     return 0;
 }

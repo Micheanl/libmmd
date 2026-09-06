@@ -1,0 +1,6 @@
+{
+  "libmmd.action.list": "%s actions. Use /libmmd action play and Tab to choose an action.",
+  "libmmd.action.play": "Previewing action: %s",
+  "libmmd.action.failed": "Action preview failed: %s",
+  "libmmd.action.stopped": "Action preview stopped"
+}

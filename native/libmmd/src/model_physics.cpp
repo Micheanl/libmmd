@@ -5,7 +5,9 @@
 #include <BulletCollision/CollisionShapes/btBoxShape.h>
 #include <BulletCollision/CollisionShapes/btCapsuleShape.h>
 #include <BulletCollision/CollisionShapes/btSphereShape.h>
+#include <BulletDynamics/ConstraintSolver/btGeneric6DofConstraint.h>
 #include <BulletDynamics/ConstraintSolver/btGeneric6DofSpringConstraint.h>
+#include <BulletDynamics/ConstraintSolver/btPoint2PointConstraint.h>
 #include <BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <LinearMath/btDefaultMotionState.h>
@@ -82,7 +84,7 @@ void validate_body(const pmx::RigidBody& body, const std::size_t bone_count) {
 }
 
 void validate_joint(const pmx::Joint& joint, const std::size_t body_count) {
-    if (joint.type != 0) throw std::invalid_argument("model physics supports only PMX spring 6DoF joints (type 0)");
+    if (joint.type > 2) throw std::invalid_argument("model physics supports only PMX joint types 0, 1 and 2");
     const auto valid_index = [&](const std::int32_t index) {
         return index == -1 || (index >= 0 && static_cast<std::size_t>(index) < body_count);
     };
@@ -92,13 +94,60 @@ void validate_joint(const pmx::Joint& joint, const std::size_t body_count) {
         !finite(joint.translation_lower_limit) || !finite(joint.translation_upper_limit) ||
         !finite(joint.rotation_lower_limit) || !finite(joint.rotation_upper_limit) ||
         !finite(joint.translation_spring) || !finite(joint.rotation_spring)) {
-        throw std::invalid_argument("PMX spring joint parameters are invalid");
+        throw std::invalid_argument("PMX joint parameters are invalid");
     }
-    for (std::size_t axis = 0; axis < 3; ++axis) {
-        if (joint.translation_spring[axis] < 0.0f || joint.rotation_spring[axis] < 0.0f) {
-            throw std::invalid_argument("PMX spring joint stiffness is invalid");
+    if (joint.type == 0) {
+        for (std::size_t axis = 0; axis < 3; ++axis) {
+            if (joint.translation_spring[axis] < 0.0f || joint.rotation_spring[axis] < 0.0f) {
+                throw std::invalid_argument("PMX spring joint stiffness is invalid");
+            }
         }
     }
+}
+
+std::unique_ptr<btTypedConstraint> create_joint(
+    const pmx::Joint& source, btRigidBody& first, btRigidBody& second, const float scale) {
+    const auto joint_transform = pmx_transform(source.position, source.rotation, scale);
+    const auto first_frame = first.getWorldTransform().inverse() * joint_transform;
+    const auto second_frame = second.getWorldTransform().inverse() * joint_transform;
+    if (!finite(first_frame.getOrigin()) || !finite(second_frame.getOrigin())) {
+        throw std::invalid_argument("PMX joint frame overflows the physics scale");
+    }
+    if (source.type == 2) {
+        return std::make_unique<btPoint2PointConstraint>(
+            first, second, first_frame.getOrigin(), second_frame.getOrigin());
+    }
+
+    std::unique_ptr<btGeneric6DofConstraint> joint;
+    if (source.type == 0) {
+        joint = std::make_unique<btGeneric6DofSpringConstraint>(first, second, first_frame, second_frame, true);
+    } else {
+        joint = std::make_unique<btGeneric6DofConstraint>(first, second, first_frame, second_frame, true);
+    }
+    const btVector3 linear_lower{source.translation_lower_limit[0] * scale,
+        source.translation_lower_limit[1] * scale, -source.translation_upper_limit[2] * scale};
+    const btVector3 linear_upper{source.translation_upper_limit[0] * scale,
+        source.translation_upper_limit[1] * scale, -source.translation_lower_limit[2] * scale};
+    if (!finite(linear_lower) || !finite(linear_upper)) {
+        throw std::invalid_argument("PMX joint limits overflow the physics scale");
+    }
+    joint->setLinearLowerLimit(linear_lower);
+    joint->setLinearUpperLimit(linear_upper);
+    joint->setAngularLowerLimit({-source.rotation_upper_limit[0], -source.rotation_upper_limit[1],
+        source.rotation_lower_limit[2]});
+    joint->setAngularUpperLimit({-source.rotation_lower_limit[0], -source.rotation_lower_limit[1],
+        source.rotation_upper_limit[2]});
+    if (source.type == 0) {
+        auto& spring = static_cast<btGeneric6DofSpringConstraint&>(*joint);
+        for (int axis = 0; axis < 3; ++axis) {
+            spring.enableSpring(axis, source.translation_spring[axis] > 0.0f);
+            spring.setStiffness(axis, source.translation_spring[axis]);
+            spring.enableSpring(axis + 3, source.rotation_spring[axis] > 0.0f);
+            spring.setStiffness(axis + 3, source.rotation_spring[axis]);
+        }
+        spring.setEquilibriumPoint();
+    }
+    return joint;
 }
 
 }
@@ -134,7 +183,7 @@ struct ModelPhysics::Impl {
     btDiscreteDynamicsWorld world{&dispatcher, &broadphase, &solver, &collision_configuration};
     btRigidBody world_anchor{0.0f, nullptr, nullptr};
     std::vector<Body> bodies;
-    std::vector<std::unique_ptr<btGeneric6DofSpringConstraint>> joints;
+    std::vector<std::unique_ptr<btTypedConstraint>> joints;
     std::vector<BonePhysicsOverride> overrides;
     std::vector<std::size_t> driving_body_indices;
     Pose previous_animation;
@@ -219,32 +268,7 @@ struct ModelPhysics::Impl {
                 : *bodies[source.first_rigid_body_index].rigid_body;
             auto& second = source.second_rigid_body_index < 0 ? world_anchor
                 : *bodies[source.second_rigid_body_index].rigid_body;
-            const auto joint_transform = pmx_transform(source.position, source.rotation, config.meters_per_unit);
-            auto joint = std::make_unique<btGeneric6DofSpringConstraint>(first, second,
-                first.getWorldTransform().inverse() * joint_transform,
-                second.getWorldTransform().inverse() * joint_transform, true);
-            const auto scale = config.meters_per_unit;
-            const btVector3 linear_lower{source.translation_lower_limit[0] * scale,
-                source.translation_lower_limit[1] * scale, -source.translation_upper_limit[2] * scale};
-            const btVector3 linear_upper{source.translation_upper_limit[0] * scale,
-                source.translation_upper_limit[1] * scale, -source.translation_lower_limit[2] * scale};
-            if (!finite(linear_lower) || !finite(linear_upper)) {
-                throw std::invalid_argument("PMX spring joint limits overflow the physics scale");
-            }
-            joint->setLinearLowerLimit(linear_lower);
-            joint->setLinearUpperLimit(linear_upper);
-            joint->setAngularLowerLimit({-source.rotation_upper_limit[0], -source.rotation_upper_limit[1],
-                source.rotation_lower_limit[2]});
-            joint->setAngularUpperLimit({-source.rotation_lower_limit[0], -source.rotation_lower_limit[1],
-                source.rotation_upper_limit[2]});
-            for (int axis = 0; axis < 3; ++axis) {
-                joint->enableSpring(axis, source.translation_spring[axis] > 0.0f);
-                joint->setStiffness(axis, source.translation_spring[axis]);
-                joint->enableSpring(axis + 3, source.rotation_spring[axis] > 0.0f);
-                joint->setStiffness(axis + 3, source.rotation_spring[axis]);
-            }
-            joint->setEquilibriumPoint();
-            joints.push_back(std::move(joint));
+            joints.push_back(create_joint(source, first, second, config.meters_per_unit));
             world.addConstraint(joints.back().get(), false);
         }
     }
@@ -320,8 +344,12 @@ void ModelPhysics::reset(const Pose& animation) {
     impl_->world.clearForces();
     for (const auto& joint : impl_->joints) {
         joint->internalSetAppliedImpulse(0.0f);
-        joint->getTranslationalLimitMotor()->m_accumulatedImpulse.setZero();
-        for (int axis = 0; axis < 3; ++axis) joint->getRotationalLimitMotor(axis)->m_accumulatedImpulse = 0.0f;
+        const auto type = joint->getConstraintType();
+        if (type == D6_CONSTRAINT_TYPE || type == D6_SPRING_CONSTRAINT_TYPE) {
+            auto& dof = static_cast<btGeneric6DofConstraint&>(*joint);
+            dof.getTranslationalLimitMotor()->m_accumulatedImpulse.setZero();
+            for (int axis = 0; axis < 3; ++axis) dof.getRotationalLimitMotor(axis)->m_accumulatedImpulse = 0.0f;
+        }
     }
     impl_->solver.reset();
     impl_->previous_animation = animation;

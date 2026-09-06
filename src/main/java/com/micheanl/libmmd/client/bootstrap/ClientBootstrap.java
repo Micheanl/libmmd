@@ -19,6 +19,8 @@ import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
 
 import java.util.HashSet;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
 
 @Environment(EnvType.CLIENT)
 public final class ClientBootstrap implements ClientModInitializer {
@@ -39,7 +41,10 @@ public final class ClientBootstrap implements ClientModInitializer {
                     players.clear();
                 } else {
                     var activeIds = new HashSet<Integer>();
-                    for (var player : client.level.players()) activeIds.add(player.getId());
+                    for (var player : client.level.players()) {
+                        activeIds.add(player.getId());
+                        players.sample(player, player == client.player && client.gameMode != null && client.gameMode.isDestroying());
+                    }
                     players.retain(activeIds);
                 }
                 nativeRuntime.update(1.0f / 20.0f);
@@ -58,6 +63,10 @@ public final class ClientBootstrap implements ClientModInitializer {
         CameraRenderState camera
     ) {
         return players != null && players.submit(state, collector, camera);
+    }
+
+    public static void triggerAction(Player player, String action, InteractionHand hand) {
+        if (players != null) players.trigger(player, action, hand);
     }
 
     private static synchronized void close() {

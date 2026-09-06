@@ -1,0 +1,6 @@
+{
+  "libmmd.action.list": "共 %s 个动作。输入 /libmmd action play 后按 Tab 选择动作。",
+  "libmmd.action.play": "正在预览动作：%s",
+  "libmmd.action.failed": "动作预览失败：%s",
+  "libmmd.action.stopped": "已停止动作预览"
+}

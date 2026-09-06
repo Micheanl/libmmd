@@ -288,6 +288,27 @@ bool Pose::blend(const Pose& from, const Pose& to, const float weight) noexcept 
     return true;
 }
 
+bool Pose::blend_layer(
+    const Pose& source, const std::span<const std::uint8_t> bone_mask,
+    const std::span<const std::uint8_t> ik_mask, const float weight) noexcept {
+    if (source.bones_.size() != bones_.size() || bone_mask.size() != bones_.size() ||
+        ik_mask.size() != bones_.size() || !std::isfinite(weight) || weight < 0.0f || weight > 1.0f) return false;
+    for (std::size_t index = 0; index < bones_.size(); ++index) {
+        if (bone_mask[index] != 0) {
+            const auto& target = source.local_translations_[index];
+            auto& translation = local_translations_[index];
+            translation = {
+                translation.x + (target.x - translation.x) * weight,
+                translation.y + (target.y - translation.y) * weight,
+                translation.z + (target.z - translation.z) * weight};
+            local_rotations_[index] = slerp(local_rotations_[index], source.local_rotations_[index], weight);
+        }
+        if (ik_mask[index] != 0 && weight >= 0.5f) ik_enabled_[index] = source.ik_enabled_[index];
+    }
+    evaluate();
+    return true;
+}
+
 void Pose::evaluate_hierarchy() noexcept {
     for (const auto index : evaluation_order_) {
         const auto& bone = bones_[index];

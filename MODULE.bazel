@@ -18,6 +18,8 @@ http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "ht
 http_archive(
     name = "bullet",
     build_file = "//third_party:bullet.BUILD.bazel",
+    patch_args = ["-p1"],
+    patches = ["//third_party:bullet-joint-inverse-mass.patch"],
     sha256 = "c45afb6399e3f68036ddb641c6bf6f552bf332d5ab6be62f7e6c54eda05ceb77",
     strip_prefix = "bullet3-3.25",
     urls = ["https://github.com/bulletphysics/bullet3/archive/refs/tags/3.25.tar.gz"],

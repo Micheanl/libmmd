@@ -85,8 +85,11 @@ public final class SceneRuntime {
     private final MethodHandle setVisible;
     private final MethodHandle play;
     private final MethodHandle stop;
+    private final MethodHandle playOverlay;
+    private final MethodHandle stopOverlay;
     private final MethodHandle resetPhysics;
     private final MethodHandle getState;
+    private final MethodHandle getOverlayState;
     private final MethodHandle getMatrices;
     private final MethodHandle getRenderPacket;
     private final Set<Scene> scenes = new LinkedHashSet<>();
@@ -150,11 +153,37 @@ public final class SceneRuntime {
             ADDRESS,
             JAVA_FLOAT
         );
+        playOverlay = optionalDowncall(
+            linker,
+            symbols,
+            "libmmd_model_instance_play_overlay",
+            JAVA_INT,
+            ADDRESS,
+            ADDRESS,
+            JAVA_INT,
+            JAVA_FLOAT
+        );
+        stopOverlay = optionalDowncall(
+            linker,
+            symbols,
+            "libmmd_model_instance_stop_overlay",
+            JAVA_INT,
+            ADDRESS,
+            JAVA_FLOAT
+        );
         resetPhysics = optionalDowncall(linker, symbols, "libmmd_model_instance_reset_physics", JAVA_INT, ADDRESS);
         getState = downcall(
             linker,
             symbols,
             "libmmd_model_instance_get_state",
+            JAVA_INT,
+            ADDRESS,
+            ADDRESS
+        );
+        getOverlayState = optionalDowncall(
+            linker,
+            symbols,
+            "libmmd_model_instance_get_overlay_state",
             JAVA_INT,
             ADDRESS,
             ADDRESS
@@ -348,11 +377,52 @@ public final class SceneRuntime {
         }
     }
 
+    private void playOverlay(MemorySegment instance, NativeRuntime.Motion motion, boolean looping, float fadeSeconds) {
+        if (playOverlay == null) {
+            throw new UnsupportedOperationException("Native library does not provide libmmd_model_instance_play_overlay");
+        }
+        requireFiniteNonNegative(fadeSeconds, "fadeSeconds");
+        try {
+            var status = (int) playOverlay.invokeExact(instance, motion.nativeHandle(), looping ? 1 : 0, fadeSeconds);
+            check(status, "Unable to play native animation overlay");
+        } catch (RuntimeException failure) {
+            throw failure;
+        } catch (Throwable failure) {
+            throw new IllegalStateException("Unable to call native animation overlay playback", failure);
+        }
+    }
+
+    private void stopOverlay(MemorySegment instance, float fadeSeconds) {
+        if (stopOverlay == null) {
+            throw new UnsupportedOperationException("Native library does not provide libmmd_model_instance_stop_overlay");
+        }
+        requireFiniteNonNegative(fadeSeconds, "fadeSeconds");
+        try {
+            var status = (int) stopOverlay.invokeExact(instance, fadeSeconds);
+            check(status, "Unable to stop native animation overlay");
+        } catch (RuntimeException failure) {
+            throw failure;
+        } catch (Throwable failure) {
+            throw new IllegalStateException("Unable to call native animation overlay stop", failure);
+        }
+    }
+
     private InstanceState state(MemorySegment instance) {
+        return state(instance, getState);
+    }
+
+    private InstanceState overlayState(MemorySegment instance) {
+        if (getOverlayState == null) {
+            throw new UnsupportedOperationException("Native library does not provide libmmd_model_instance_get_overlay_state");
+        }
+        return state(instance, getOverlayState);
+    }
+
+    private InstanceState state(MemorySegment instance, MethodHandle query) {
         try (var arena = Arena.ofConfined()) {
             var output = arena.allocate(STATE_LAYOUT);
             header(output, STATE_LAYOUT);
-            var status = (int) getState.invokeExact(instance, output);
+            var status = (int) query.invokeExact(instance, output);
             check(status, "Unable to query native model instance");
             return new InstanceState(
                 new Transform(vector(output, 8), quaternion(output, 20), vector(output, 36)),
@@ -806,6 +876,8 @@ public final class SceneRuntime {
         private MemorySegment handle;
         private NativeRuntime.Motion motion;
         private boolean looping;
+        private NativeRuntime.Motion overlayMotion;
+        private boolean isOverlayLooping;
 
         private ModelInstance(Scene scene, NativeRuntime.Model model, MemorySegment handle) {
             this.scene = scene;
@@ -845,6 +917,28 @@ public final class SceneRuntime {
             releaseMotion();
         }
 
+        public synchronized void playOverlay(NativeRuntime.Motion motion, boolean looping, float fadeSeconds) {
+            ensureOpen();
+            Objects.requireNonNull(motion, "motion");
+            if (motion.model() != model) throw new IllegalArgumentException("Motion and model instance must share a model");
+            motion.retainInstance();
+            try {
+                scene.owner.playOverlay(handle, motion, looping, fadeSeconds);
+            } catch (RuntimeException failure) {
+                motion.releaseInstance();
+                throw failure;
+            }
+            releaseOverlayMotion();
+            overlayMotion = motion;
+            isOverlayLooping = looping;
+        }
+
+        public synchronized void stopOverlay(float fadeSeconds) {
+            ensureOpen();
+            scene.owner.stopOverlay(handle, fadeSeconds);
+            releaseOverlayMotion();
+        }
+
         public void resetPhysics() {
             ensureOpen();
             scene.owner.resetPhysics(handle);
@@ -854,6 +948,13 @@ public final class SceneRuntime {
             ensureOpen();
             var state = scene.owner.state(handle);
             if (!state.playing()) releaseMotion();
+            return state;
+        }
+
+        public synchronized InstanceState overlayState() {
+            ensureOpen();
+            var state = scene.owner.overlayState(handle);
+            if (!state.playing()) releaseOverlayMotion();
             return state;
         }
 
@@ -877,12 +978,16 @@ public final class SceneRuntime {
             scene.owner.destroyInstance(handle);
             handle = MemorySegment.NULL;
             releaseMotion();
+            releaseOverlayMotion();
             model.releaseInstance();
             scene.remove(this);
         }
 
         private synchronized void refreshMotion() {
             if (motion != null && !looping && !scene.owner.state(handle).playing()) releaseMotion();
+            if (overlayMotion != null && !isOverlayLooping && !scene.owner.overlayState(handle).playing()) {
+                releaseOverlayMotion();
+            }
         }
 
         private void releaseMotion() {
@@ -890,6 +995,13 @@ public final class SceneRuntime {
             motion.releaseInstance();
             motion = null;
             looping = false;
+        }
+
+        private void releaseOverlayMotion() {
+            if (overlayMotion == null) return;
+            overlayMotion.releaseInstance();
+            overlayMotion = null;
+            isOverlayLooping = false;
         }
 
         private void ensureOpen() {

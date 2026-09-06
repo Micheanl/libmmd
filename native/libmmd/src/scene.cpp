@@ -23,7 +23,8 @@ float smoothstep(const float value) {
 }
 
 AnimationController::AnimationController(const std::span<const pmx::Bone> bones)
-    : pose_(bones), source_pose_(bones), target_pose_(bones) {}
+    : pose_(bones), source_pose_(bones), target_pose_(bones),
+      overlay_source_pose_(bones), overlay_target_pose_(bones) {}
 
 bool AnimationController::play(
     const MotionClip& motion,
@@ -58,6 +59,39 @@ bool AnimationController::stop(const float fade_seconds) noexcept {
     return true;
 }
 
+bool AnimationController::play_overlay(
+    const MotionClip& motion,
+    const bool looping,
+    const float fade_seconds) noexcept {
+    if (motion.bone_count() != pose_.bone_count() || !std::isfinite(fade_seconds) || fade_seconds < 0.0f) {
+        return false;
+    }
+    auto target = pose_;
+    if (!motion.apply_layer(0.0f, looping, target)) return false;
+    overlay_source_pose_ = pose_;
+    overlay_target_pose_ = std::move(target);
+    overlay_motion_ = &motion;
+    overlay_playback_seconds_ = 0.0f;
+    overlay_transition_seconds_ = 0.0f;
+    overlay_transition_duration_ = fade_seconds;
+    overlay_looping_ = looping;
+    overlay_stopping_ = false;
+    if (fade_seconds == 0.0f) pose_ = overlay_target_pose_;
+    return true;
+}
+
+bool AnimationController::stop_overlay(const float fade_seconds) noexcept {
+    if (!std::isfinite(fade_seconds) || fade_seconds < 0.0f) return false;
+    overlay_source_pose_ = pose_;
+    overlay_motion_ = nullptr;
+    overlay_playback_seconds_ = 0.0f;
+    overlay_transition_seconds_ = 0.0f;
+    overlay_transition_duration_ = fade_seconds;
+    overlay_looping_ = false;
+    overlay_stopping_ = fade_seconds > 0.0f;
+    return true;
+}
+
 bool AnimationController::update(const float delta_seconds) noexcept {
     if (!std::isfinite(delta_seconds) || delta_seconds < 0.0f) return false;
     if (motion_ != nullptr) {
@@ -80,15 +114,42 @@ bool AnimationController::update(const float delta_seconds) noexcept {
         transition_duration_ == 0.0f) {
         motion_ = nullptr;
     }
+    auto base_pose = pose_;
+    if (overlay_motion_ != nullptr) {
+        overlay_playback_seconds_ += delta_seconds;
+        overlay_target_pose_ = base_pose;
+        if (!overlay_motion_->apply_layer(overlay_playback_seconds_, overlay_looping_, overlay_target_pose_)) return false;
+    } else if (overlay_stopping_) {
+        overlay_target_pose_ = base_pose;
+    }
+    if (overlay_transition_duration_ > 0.0f && (overlay_motion_ != nullptr || overlay_stopping_)) {
+        overlay_transition_seconds_ = std::min(
+            overlay_transition_seconds_ + delta_seconds, overlay_transition_duration_);
+        const auto progress = smoothstep(overlay_transition_seconds_ / overlay_transition_duration_);
+        if (!pose_.blend(overlay_source_pose_, overlay_target_pose_, progress)) return false;
+        if (overlay_transition_seconds_ >= overlay_transition_duration_) {
+            overlay_transition_duration_ = 0.0f;
+            overlay_transition_seconds_ = 0.0f;
+            overlay_stopping_ = false;
+        }
+    } else if (overlay_motion_ != nullptr) {
+        pose_ = overlay_target_pose_;
+    }
+    if (overlay_motion_ != nullptr && !overlay_looping_ &&
+        overlay_playback_seconds_ >= overlay_motion_->duration_seconds() && overlay_transition_duration_ == 0.0f) {
+        overlay_motion_ = nullptr;
+    }
     return true;
 }
 
 void AnimationController::detach(const MotionClip& motion) noexcept {
     if (motion_ == &motion) static_cast<void>(stop(0.0f));
+    if (overlay_motion_ == &motion) static_cast<void>(stop_overlay(0.0f));
 }
 
 const Pose& AnimationController::pose() const noexcept { return pose_; }
 bool AnimationController::playing() const noexcept { return motion_ != nullptr; }
+bool AnimationController::overlay_playing() const noexcept { return overlay_motion_ != nullptr; }
 bool AnimationController::looping() const noexcept { return motion_ != nullptr && looping_; }
 float AnimationController::playback_seconds() const noexcept { return playback_seconds_; }
 
@@ -98,6 +159,7 @@ float AnimationController::transition_weight() const noexcept {
 }
 
 bool AnimationController::uses(const MotionClip& motion) const noexcept { return motion_ == &motion; }
+bool AnimationController::uses_overlay(const MotionClip& motion) const noexcept { return overlay_motion_ == &motion; }
 
 ModelInstance::ModelInstance(
     const std::span<const pmx::Bone> bones,

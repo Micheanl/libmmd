@@ -46,6 +46,9 @@ public:
         Quaternion rotation) noexcept;
     [[nodiscard]] bool set_ik_enabled(std::uint32_t bone_index, bool enabled) noexcept;
     [[nodiscard]] bool blend(const Pose& from, const Pose& to, float weight) noexcept;
+    [[nodiscard]] bool blend_layer(
+        const Pose& source, std::span<const std::uint8_t> bone_mask,
+        std::span<const std::uint8_t> ik_mask, float weight) noexcept;
     void evaluate() noexcept;
     [[nodiscard]] bool global_transform(std::uint32_t bone_index, BoneTransform& output) const noexcept;
     [[nodiscard]] bool apply_physics(std::span<const BonePhysicsOverride> overrides) noexcept;

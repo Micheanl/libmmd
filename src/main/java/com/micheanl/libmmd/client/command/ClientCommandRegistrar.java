@@ -2,6 +2,7 @@ package com.micheanl.libmmd.client.command;
 
 import com.micheanl.libmmd.client.model.ModelController;
 import com.micheanl.libmmd.client.render.PlayerRenderManager;
+import com.micheanl.libmmd.client.animation.ActionCatalog;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
@@ -16,6 +17,36 @@ public final class ClientCommandRegistrar {
     public static void register(ModelController models, PlayerRenderManager players) {
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> dispatcher.register(
             ClientCommands.literal("libmmd")
+                .then(ClientCommands.literal("action")
+                    .then(ClientCommands.literal("list").executes(context -> {
+                        context.getSource().sendFeedback(Component.translatable(
+                            "libmmd.action.list", ActionCatalog.bundled().names().size()));
+                        return 1;
+                    }))
+                    .then(ClientCommands.literal("play")
+                        .then(ClientCommands.argument("name", StringArgumentType.word())
+                            .suggests((context, builder) -> {
+                                for (var name : ActionCatalog.bundled().names()) {
+                                    if (name.startsWith(builder.getRemaining())) builder.suggest(name);
+                                }
+                                return builder.buildFuture();
+                            })
+                            .executes(context -> {
+                                try {
+                                    var name = StringArgumentType.getString(context, "name");
+                                    models.previewAction(name);
+                                    context.getSource().sendFeedback(Component.translatable("libmmd.action.play", name));
+                                    return 1;
+                                } catch (RuntimeException failure) {
+                                    context.getSource().sendError(Component.translatable("libmmd.action.failed", failure.getMessage()));
+                                    return 0;
+                                }
+                            })))
+                    .then(ClientCommands.literal("stop").executes(context -> {
+                        models.stopPreview();
+                        context.getSource().sendFeedback(Component.translatable("libmmd.action.stopped"));
+                        return 1;
+                    })))
                 .then(ClientCommands.literal("load")
                     .then(ClientCommands.argument("path", StringArgumentType.greedyString())
                         .executes(context -> {

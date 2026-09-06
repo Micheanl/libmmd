@@ -140,6 +140,11 @@ MotionClip::MotionClip(const std::span<const pmx::Bone> bones, const vmd::Motion
 bool MotionClip::apply(const float time_seconds, const bool looping, Pose& pose) const noexcept {
     if (!std::isfinite(time_seconds) || time_seconds < 0.0f || pose.bone_count() != bone_count_) return false;
     pose.reset();
+    return apply_layer(time_seconds, looping, pose);
+}
+
+bool MotionClip::apply_layer(const float time_seconds, const bool looping, Pose& pose) const noexcept {
+    if (!std::isfinite(time_seconds) || time_seconds < 0.0f || pose.bone_count() != bone_count_) return false;
     auto frame = time_seconds * frame_rate;
     if (duration_frames_ == 0) frame = 0.0f;
     else if (looping) frame = std::fmod(frame, static_cast<float>(duration_frames_));
@@ -181,6 +186,11 @@ bool MotionClip::apply(const float time_seconds, const bool looping, Pose& pose)
 }
 
 std::uint32_t MotionClip::duration_frames() const noexcept { return duration_frames_; }
+void MotionClip::include_layer(
+    const std::span<std::uint8_t> bone_mask, const std::span<std::uint8_t> ik_mask) const noexcept {
+    for (const auto& track : tracks_) bone_mask[track.bone_index] = 1;
+    for (const auto& track : ik_tracks_) ik_mask[track.bone_index] = 1;
+}
 std::uint32_t MotionClip::bound_bone_count() const noexcept { return static_cast<std::uint32_t>(tracks_.size()); }
 std::uint32_t MotionClip::bound_ik_count() const noexcept { return static_cast<std::uint32_t>(ik_tracks_.size()); }
 std::uint32_t MotionClip::bone_count() const noexcept { return bone_count_; }

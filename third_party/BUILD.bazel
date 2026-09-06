@@ -1,5 +1,6 @@
 exports_files([
     "bullet.BUILD.bazel",
+    "bullet-joint-inverse-mass.patch",
     "rules_foreign_cc-bazel9.patch",
     "physx-linux-headers.patch",
     "physx.BUILD.bazel",

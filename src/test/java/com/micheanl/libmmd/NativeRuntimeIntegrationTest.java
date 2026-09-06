@@ -85,6 +85,54 @@ final class NativeRuntimeIntegrationTest {
     }
 
     @Test
+    void anchorsSixDofModelJointThroughFfm(@TempDir Path directory) throws IOException {
+        assertModelJointAnchorsSphereThroughFfm(directory, 1);
+    }
+
+    @Test
+    void anchorsPointToPointModelJointThroughFfm(@TempDir Path directory) throws IOException {
+        assertModelJointAnchorsSphereThroughFfm(directory, 2);
+    }
+
+    private static void assertModelJointAnchorsSphereThroughFfm(Path directory, int jointType) throws IOException {
+        var defaults = SceneRuntime.PhysicsConfig.defaults();
+        var config = new SceneRuntime.PhysicsConfig(defaults.gravity(), 1.0f,
+            defaults.fixedStepSeconds(), defaults.maximumSubsteps(), defaults.solverIterations());
+        for (var isWorldAnchorFirst : new boolean[] {false, true}) {
+            var pmx = directory.resolve("anchored-sphere-" + jointType + "-" + isWorldAnchorFirst + ".pmx");
+            Files.write(pmx, dynamicSpherePmx(jointType, isWorldAnchorFirst));
+            try (var runtime = NativeRuntime.open(1);
+                 var model = runtime.loadPmx(pmx);
+                 var animatedScene = runtime.scenes().create();
+                 var physicalScene = runtime.scenes().create(0.25f, config);
+                 var animatedInstance = animatedScene.createInstance(model);
+                 var physicalInstance = physicalScene.createInstance(model)) {
+                assertEquals(1, model.info().rigidBodyCount());
+                assertEquals(1, model.info().jointCount());
+                var matrices = physicalInstance.matrices();
+                var packet = physicalInstance.renderPacket();
+                var restMatrices = animatedInstance.matrices().data().toArray(JAVA_FLOAT);
+                assertEquals(0.0f, restMatrices[13], 0.0001f);
+                assertArrayEquals(restMatrices, matrices.data().toArray(JAVA_FLOAT), 0.0001f);
+
+                for (var cycle = 0; cycle < 2; cycle++) {
+                    for (var frame = 0; frame < 60; frame++) {
+                        animatedScene.update(1.0f / 60.0f);
+                        var update = physicalScene.update(1.0f / 60.0f);
+                        assertFalse(update.droppedTime());
+                        assertArrayEquals(restMatrices, matrices.data().toArray(JAVA_FLOAT), 0.001f);
+                        assertArrayEquals(restMatrices, animatedInstance.matrices().data().toArray(JAVA_FLOAT), 0.0001f);
+                    }
+                    assertArrayEquals(matrices.data().toArray(JAVA_FLOAT), packet.matrices().toArray(JAVA_FLOAT), 0.0001f);
+                    physicalInstance.resetPhysics();
+                    assertArrayEquals(restMatrices, matrices.data().toArray(JAVA_FLOAT), 0.0001f);
+                    assertArrayEquals(restMatrices, packet.matrices().toArray(JAVA_FLOAT), 0.0001f);
+                }
+            }
+        }
+    }
+
+    @Test
     void rejectsInvalidModelPhysicsConfiguration() {
         var defaults = SceneRuntime.PhysicsConfig.defaults();
         assertEquals(new NativeRuntime.Vector3(0.0f, -9.81f, 0.0f), defaults.gravity());
@@ -349,8 +397,12 @@ final class NativeRuntimeIntegrationTest {
     }
 
     private static byte[] dynamicSpherePmx() {
+        return dynamicSpherePmx(-1, false);
+    }
+
+    private static byte[] dynamicSpherePmx(int jointType, boolean isWorldAnchorFirst) {
         var pmx = ByteBuffer.allocate(1024).order(ByteOrder.LITTLE_ENDIAN);
-        pmx.put(new byte[] {'P', 'M', 'X', ' '}).putFloat(2.0f);
+        pmx.put(new byte[] {'P', 'M', 'X', ' '}).putFloat(jointType < 0 ? 2.0f : 2.1f);
         pmx.put(new byte[] {8, 1, 0, 1, 1, 1, 1, 1, 1});
         putText(pmx, "dynamic-sphere");
         putText(pmx, "");
@@ -390,7 +442,16 @@ final class NativeRuntimeIntegrationTest {
         putFloats(pmx, 0.0f, 0.0f, 0.0f);
         putFloats(pmx, 1.0f, 0.0f, 0.0f, 0.0f, 0.5f);
         pmx.put((byte) 1);
-        pmx.putInt(0);
+        pmx.putInt(jointType < 0 ? 0 : 1);
+        if (jointType >= 0) {
+            putText(pmx, "world-anchor");
+            putText(pmx, "");
+            pmx.put((byte) jointType);
+            pmx.put((byte) (isWorldAnchorFirst ? -1 : 0)).put((byte) (isWorldAnchorFirst ? 0 : -1));
+            putFloats(pmx, 0.0f, 3.0f, 0.0f);
+            for (var group = 0; group < 7; group++) putFloats(pmx, 0.0f, 0.0f, 0.0f);
+            pmx.putInt(0);
+        }
         return Arrays.copyOf(pmx.array(), pmx.position());
     }
 

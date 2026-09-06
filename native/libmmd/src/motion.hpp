@@ -16,6 +16,8 @@ public:
     MotionClip(std::span<const pmx::Bone> bones, const vmd::Motion& motion);
 
     [[nodiscard]] bool apply(float time_seconds, bool looping, Pose& pose) const noexcept;
+    [[nodiscard]] bool apply_layer(float time_seconds, bool looping, Pose& pose) const noexcept;
+    void include_layer(std::span<std::uint8_t> bone_mask, std::span<std::uint8_t> ik_mask) const noexcept;
     [[nodiscard]] std::uint32_t duration_frames() const noexcept;
     [[nodiscard]] std::uint32_t bound_bone_count() const noexcept;
     [[nodiscard]] std::uint32_t bound_ik_count() const noexcept;

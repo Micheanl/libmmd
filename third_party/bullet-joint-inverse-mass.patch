@@ -1,0 +1,25 @@
+--- a/src/BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.cpp
++++ b/src/BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.cpp
+@@ -30,6 +30,7 @@
+ #include "LinearMath/btMinMax.h"
+ #include "BulletDynamics/ConstraintSolver/btTypedConstraint.h"
+ #include <new>
++#include <cmath>
+ #include "LinearMath/btStackAlloc.h"
+ #include "LinearMath/btQuickprof.h"
+ //#include "btSolverBody.h"
+@@ -1261,10 +1262,10 @@
+ 			sum += iMJaA.dot(solverConstraint.m_relpos1CrossNormal);
+ 			sum += iMJlB.dot(solverConstraint.m_contactNormal2);
+ 			sum += iMJaB.dot(solverConstraint.m_relpos2CrossNormal);
+-			btScalar fsum = btFabs(sum);
+-			btAssert(fsum > SIMD_EPSILON);
+-			btScalar sorRelaxation = 1.f;  //todo: get from globalInfo?
+-			solverConstraint.m_jacDiagABInv = fsum > SIMD_EPSILON ? sorRelaxation / sum : 0.f;
++			// libmmd: preserve finite joint response for large masses instead of treating small inverse mass as zero.
++			const btScalar inverseSum = sum > btScalar(0) ? btScalar(1) / sum : btScalar(0);
++			btAssert(inverseSum > btScalar(0) && std::isfinite(inverseSum));
++			solverConstraint.m_jacDiagABInv = std::isfinite(inverseSum) ? inverseSum : btScalar(0);
+ 		}
+ 
+ 		{

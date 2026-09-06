@@ -103,6 +103,7 @@ struct libmmd_model_instance {
     libmmd_scene* scene;
     libmmd_model* model;
     libmmd_motion* motion;
+    libmmd_motion* overlay_motion;
 };
 
 struct libmmd_physics_world {
@@ -715,7 +716,8 @@ void libmmd_motion_destroy(libmmd_motion* motion) {
         while (!motion->instances.empty()) {
             auto* instance = *motion->instances.begin();
             instance->value->animation().detach(motion->value);
-            instance->motion = nullptr;
+            if (instance->motion == motion) instance->motion = nullptr;
+            if (instance->overlay_motion == motion) instance->overlay_motion = nullptr;
             motion->instances.erase(instance);
         }
     }
@@ -803,6 +805,12 @@ libmmd_status libmmd_scene_update(
                 instance->motion->instances.erase(instance);
                 instance->motion = nullptr;
             }
+            if (instance->overlay_motion != nullptr &&
+                !instance->value->animation().uses_overlay(instance->overlay_motion->value)) {
+                auto* completed = instance->overlay_motion;
+                instance->overlay_motion = nullptr;
+                if (instance->motion != completed) completed->instances.erase(instance);
+            }
         }
         std::memset(output, 0, sizeof(libmmd_scene_update_info));
         output->abi_version = LIBMMD_ABI_VERSION;
@@ -827,6 +835,7 @@ libmmd_status libmmd_model_instance_create(
         instance->scene = scene;
         instance->model = model;
         instance->motion = nullptr;
+        instance->overlay_motion = nullptr;
         instance->value = &scene->value->create_instance(model->bones, model->physics_assets);
         try {
             scene->instances.insert(instance.get());
@@ -844,6 +853,9 @@ libmmd_status libmmd_model_instance_create(
 void libmmd_model_instance_destroy(libmmd_model_instance* instance) {
     if (instance == nullptr) return;
     if (instance->motion != nullptr) instance->motion->instances.erase(instance);
+    if (instance->overlay_motion != nullptr && instance->overlay_motion != instance->motion) {
+        instance->overlay_motion->instances.erase(instance);
+    }
     instance->model->instances.erase(instance);
     instance->scene->instances.erase(instance);
     instance->scene->value->destroy_instance(*instance->value);
@@ -909,6 +921,43 @@ libmmd_status libmmd_model_instance_stop(
     }
     if (instance->motion != nullptr) instance->motion->instances.erase(instance);
     instance->motion = nullptr;
+    instance->scene->runtime->value.set_error({});
+    return LIBMMD_STATUS_OK;
+}
+
+libmmd_status libmmd_model_instance_play_overlay(
+    libmmd_model_instance* instance,
+    libmmd_motion* motion,
+    const std::uint32_t looping,
+    const float fade_seconds) {
+    if (instance == nullptr || motion == nullptr || looping > 1 || motion->model != instance->model) {
+        return LIBMMD_STATUS_INVALID_ARGUMENT;
+    }
+    if (!instance->value->animation().play_overlay(motion->value, looping == 1, fade_seconds)) {
+        instance->scene->runtime->value.set_error("animation overlay arguments are invalid");
+        return LIBMMD_STATUS_INVALID_ARGUMENT;
+    }
+    if (instance->overlay_motion != nullptr && instance->overlay_motion != instance->motion) {
+        instance->overlay_motion->instances.erase(instance);
+    }
+    instance->overlay_motion = motion;
+    motion->instances.insert(instance);
+    instance->scene->runtime->value.set_error({});
+    return LIBMMD_STATUS_OK;
+}
+
+libmmd_status libmmd_model_instance_stop_overlay(
+    libmmd_model_instance* instance,
+    const float fade_seconds) {
+    if (instance == nullptr) return LIBMMD_STATUS_INVALID_ARGUMENT;
+    if (!instance->value->animation().stop_overlay(fade_seconds)) {
+        instance->scene->runtime->value.set_error("animation overlay fade is invalid");
+        return LIBMMD_STATUS_INVALID_ARGUMENT;
+    }
+    if (instance->overlay_motion != nullptr && instance->overlay_motion != instance->motion) {
+        instance->overlay_motion->instances.erase(instance);
+    }
+    instance->overlay_motion = nullptr;
     instance->scene->runtime->value.set_error({});
     return LIBMMD_STATUS_OK;
 }

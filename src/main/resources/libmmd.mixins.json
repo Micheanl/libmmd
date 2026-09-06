@@ -4,6 +4,7 @@
   "package": "com.micheanl.libmmd.mixin.client",
   "compatibilityLevel": "JAVA_25",
   "client": [
-    "AvatarRendererMixin"
+    "AvatarRendererMixin",
+    "PlayerInteractionMixin"
   ]
 }

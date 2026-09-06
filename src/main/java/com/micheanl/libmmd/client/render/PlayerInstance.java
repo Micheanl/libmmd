@@ -2,6 +2,9 @@ package com.micheanl.libmmd.client.render;
 
 import com.micheanl.libmmd.runtime.NativeRuntime;
 import com.micheanl.libmmd.runtime.SceneRuntime;
+import com.micheanl.libmmd.client.animation.ActionLibrary;
+import com.micheanl.libmmd.client.animation.PlayerActionController;
+import com.micheanl.libmmd.client.animation.PlayerActionState;
 
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
@@ -15,6 +18,13 @@ final class PlayerInstance implements AutoCloseable {
     private final float modelScale;
     private final float verticalOffset;
     private final GpuTextures textures;
+    private final NativeRuntime.Motion defaultMotion;
+    private final ActionLibrary actions;
+    private final PlayerActionController actionController;
+    private long previewRevision = -1;
+    private long automaticRevision = -1;
+    private long eventRevision = -1;
+    private boolean isPreviewing;
     private GpuBuffers buffers;
     private List<RenderNode> nodes = List.of();
 
@@ -22,12 +32,16 @@ final class PlayerInstance implements AutoCloseable {
         SceneRuntime.Scene scene,
         NativeRuntime.Model model,
         NativeRuntime.Motion motion,
+        ActionLibrary actions,
         Path packPath,
         float modelScale,
         float verticalOffset
     ) {
         this.instance = scene.createInstance(model);
         this.model = model;
+        this.defaultMotion = motion;
+        this.actions = actions;
+        this.actionController = new PlayerActionController(actions.catalog());
         this.modelScale = modelScale;
         this.verticalOffset = verticalOffset;
         GpuTextures loadedTextures = null;
@@ -42,7 +56,41 @@ final class PlayerInstance implements AutoCloseable {
         }
     }
 
-    boolean update(AvatarRenderState state, CameraRenderState camera) {
+    boolean update(AvatarRenderState state, CameraRenderState camera, PlayerActionState actionState,
+                   String previewAction, long revision, PlayerRenderManager.PendingAction event) {
+        String selected;
+        long selectedRevision;
+        if (previewAction != null) {
+            selected = previewAction;
+            selectedRevision = revision;
+            isPreviewing = true;
+        } else if (actionState != null) {
+            if (event != null && event.revision() != eventRevision) {
+                actionController.event(event.action(), actionState.tick());
+                eventRevision = event.revision();
+            }
+            var playback = actionController.update(actionState);
+            selected = playback.action();
+            selectedRevision = playback.revision();
+            if (isPreviewing) automaticRevision = -1;
+            isPreviewing = false;
+        } else {
+            selected = null;
+            selectedRevision = revision;
+        }
+        var needsPlayback = selected != null && (isPreviewing
+            ? previewRevision != selectedRevision
+            : automaticRevision != selectedRevision);
+        if (needsPlayback) {
+            var action = actions.catalog().definition(selected);
+            instance.play(actions.motion(selected), action.looping(), actions.catalog().transitionSeconds());
+            if (isPreviewing) previewRevision = selectedRevision;
+            else automaticRevision = selectedRevision;
+        } else if (selected == null && (isPreviewing || previewRevision != revision)) {
+            instance.play(defaultMotion, true, actions.catalog().transitionSeconds());
+            previewRevision = revision;
+            isPreviewing = false;
+        }
         var yaw = (float) Math.toRadians(-state.bodyRot);
         var halfYaw = yaw * 0.5f;
         instance.setTransform(new SceneRuntime.Transform(

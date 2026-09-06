@@ -1,0 +1,5 @@
+{
+  "transition_seconds": 0.12,
+  "movement_threshold": 0.015,
+  "turn_threshold_degrees": 12.0
+}

@@ -175,6 +175,13 @@ cc_test(
 )
 
 cc_test(
+    name = "model_joint_test",
+    srcs = ["tests/model_joint_test.cpp"],
+    copts = TEST_COPTS,
+    deps = [":core"],
+)
+
+cc_test(
     name = "model_physics_runtime_test",
     srcs = ["tests/model_physics_runtime_test.cpp"],
     copts = TEST_COPTS,
@@ -194,6 +201,7 @@ test_suite(
     name = "tests",
     tests = [
         ":mmdpack_test",
+        ":model_joint_test",
         ":model_physics_test",
         ":model_physics_runtime_test",
         ":motion_test",
