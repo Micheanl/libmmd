@@ -49,11 +49,15 @@ public final class GpuBuffers implements AutoCloseable {
     }
 
     public static GpuBuffers upload(SceneRuntime.RenderPacket packet) {
+        return upload(packet, packet.indices().asByteBuffer());
+    }
+
+    static GpuBuffers upload(SceneRuntime.RenderPacket packet, ByteBuffer selectedIndices) {
         RenderSystem.assertOnRenderThread();
         var device = RenderSystem.getDevice();
         var vertices = device.createBuffer(() -> "libmmd vertices", GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST, packet.vertices().asByteBuffer());
         var skinning = device.createBuffer(() -> "libmmd skinning", GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST, packet.skinning().asByteBuffer());
-        var indices = device.createBuffer(() -> "libmmd indices", GpuBuffer.USAGE_INDEX | GpuBuffer.USAGE_COPY_DST, packet.indices().asByteBuffer());
+        var indices = device.createBuffer(() -> "libmmd indices", GpuBuffer.USAGE_INDEX | GpuBuffer.USAGE_COPY_DST, selectedIndices);
         var instances = device.createBuffer(() -> "libmmd instances", GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_COPY_DST, instanceBytes(packet));
         var matrices = device.createBuffer(() -> "libmmd matrices", GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER | GpuBuffer.USAGE_COPY_DST, matrixBytes(packet));
         var morphOffsets = device.createBuffer(() -> "libmmd morph offsets", GpuBuffer.USAGE_UNIFORM_TEXEL_BUFFER | GpuBuffer.USAGE_COPY_DST, zeroBytes(Math.multiplyExact((long) packet.vertexCount(), 32L)));
@@ -62,10 +66,14 @@ public final class GpuBuffers implements AutoCloseable {
     }
 
     public void updateMatrices(SceneRuntime.RenderPacket packet) {
+        updateMatrices(packet, instanceBytes(packet));
+    }
+
+    void updateMatrices(SceneRuntime.RenderPacket packet, ByteBuffer transform) {
         RenderSystem.assertOnRenderThread();
         CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
         encoder.writeToBuffer(matrices.slice(), matrixBytes(packet));
-        encoder.writeToBuffer(instances.slice(), instanceBytes(packet));
+        encoder.writeToBuffer(instances.slice(), transform);
         encoder.submit();
     }
 

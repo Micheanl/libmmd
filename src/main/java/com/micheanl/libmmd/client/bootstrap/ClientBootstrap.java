@@ -7,7 +7,13 @@ import com.micheanl.libmmd.client.render.PlayerRenderManager;
 import com.micheanl.libmmd.client.render.RenderFeature;
 import com.micheanl.libmmd.client.render.RenderNode;
 import com.micheanl.libmmd.client.runtime.ClientNativeRuntime;
+import com.micheanl.libmmd.client.runtime.ClientPhysicsSettings;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.multiplayer.ClientLevel;
 
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.renderer.state.level.PlayerRenderState;
+import net.minecraft.client.renderer.state.level.FirstPersonHandsAndItemsRenderState;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -27,16 +33,22 @@ public final class ClientBootstrap implements ClientModInitializer {
     private static ClientNativeRuntime nativeRuntime;
     private static ModelController models;
     private static PlayerRenderManager players;
+    private static ClientLevel currentLevel;
 
     @Override
     public void onInitializeClient() {
-        nativeRuntime = ClientNativeRuntime.open();
+        nativeRuntime = ClientNativeRuntime.open(ClientPhysicsSettings.load(FabricLoader.getInstance().getConfigDir()));
         try {
             models = new ModelController(nativeRuntime.runtime());
-            players = new PlayerRenderManager(nativeRuntime.scene(), models);
+            players = new PlayerRenderManager(nativeRuntime, models);
             RenderPipelines.register(ModelPipeline.INSTANCE);
             ClientCommandRegistrar.register(models, players);
             ClientTickEvents.END_CLIENT_TICK.register(client -> {
+                if (client.level != currentLevel) {
+                    players.clear();
+                    currentLevel = client.level;
+                }
+                if (client.isPaused()) return;
                 if (client.level == null) {
                     players.clear();
                 } else {
@@ -63,6 +75,16 @@ public final class ClientBootstrap implements ClientModInitializer {
         CameraRenderState camera
     ) {
         return players != null && players.submit(state, collector, camera);
+    }
+
+    public static boolean submitHands(PoseStack poses, SubmitNodeCollector collector,
+        PlayerRenderState player,
+        FirstPersonHandsAndItemsRenderState hands) {
+        return players != null && players.submitHands(poses, collector, player, hands);
+    }
+
+    public static void attack(Player player) {
+        if (players != null) players.attack(player);
     }
 
     public static void triggerAction(Player player, String action, InteractionHand hand) {

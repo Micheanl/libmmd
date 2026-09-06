@@ -17,7 +17,11 @@ public final class PlayerActionController {
     }
 
     public Playback update(PlayerActionState state) {
-        if (previous != null && state.tick() < previous.tick()) previous = null;
+        if (previous != null && state.tick() < previous.tick()) {
+            previous = null;
+            eventEndTick = state.tick();
+            lastEventTick = Integer.MIN_VALUE;
+        }
         var attackStarted = state.swinging() && (previous == null || !previous.swinging() ||
             state.swingProgress() < previous.swingProgress() || !state.attack().equals(previous.attack()));
         var hurtStarted = state.hurtTicks() > 0 && (previous == null || state.hurtTicks() > previous.hurtTicks());
@@ -28,7 +32,7 @@ public final class PlayerActionController {
             // An accepted interaction takes precedence over its accompanying hand swing.
         } else if (hurtStarted) {
             event("react_hurt", state.tick());
-        } else if (attackStarted && state.use() == null) {
+        } else if (attackStarted && state.use() == null && (long) state.tick() - lastEventTick > 1) {
             event(state.attack(), state.tick());
         } else if (state.use() != null) {
             choose(state.use(), false);
@@ -39,7 +43,7 @@ public final class PlayerActionController {
             else choose(state.movement(), false);
         }
         previous = state;
-        return new Playback(selected, revision);
+        return playback(state.movement());
     }
 
     public Playback event(String action, int tick) {
@@ -47,7 +51,7 @@ public final class PlayerActionController {
         lastEventTick = tick;
         eventEndTick = tick + Math.max(1, (int) Math.ceil(
             catalog.definition(action).durationFrames() * GAME_TICKS_PER_SECOND / VMD_FRAMES_PER_SECOND));
-        return new Playback(selected, revision);
+        return playback(previous == null ? "move_idle" : previous.movement());
     }
 
     private String transition(PlayerActionState state) {
@@ -75,5 +79,10 @@ public final class PlayerActionController {
         }
     }
 
-    public record Playback(String action, long revision) {}
+    private Playback playback(String movement) {
+        var upper = catalog.hasUpperBody(selected);
+        return new Playback(selected, revision, upper ? movement : selected, upper ? selected : null);
+    }
+
+    public record Playback(String action, long revision, String base, String upperBody) {}
 }

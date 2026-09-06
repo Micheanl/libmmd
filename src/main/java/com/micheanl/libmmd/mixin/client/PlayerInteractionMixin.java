@@ -23,6 +23,11 @@ public abstract class PlayerInteractionMixin {
     @Unique private String libmmd$pendingItemAction;
     @Unique private boolean libmmd$hadDropItem;
 
+    @Inject(method = "attack", at = @At("RETURN"))
+    private void libmmd$attacked(Player player, Entity entity, CallbackInfo callback) {
+        ClientBootstrap.attack(player);
+    }
+
     @Inject(method = "useItem", at = @At("HEAD"))
     private void libmmd$captureItem(Player player, InteractionHand hand, CallbackInfoReturnable<InteractionResult> callback) {
         libmmd$pendingItemAction = InteractionActions.item(player, player.getItemInHand(hand));

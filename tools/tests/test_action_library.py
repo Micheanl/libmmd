@@ -79,6 +79,21 @@ class ActionLibraryTest(unittest.TestCase):
             if clip.view == "first_person":
                 self.assertFalse(any(key.bone in ("全ての親", "センター", "頭", "下半身") for key in clip.bone_keys))
 
+    def test_upper_body_archive_never_overrides_root_legs_or_ik(self):
+        archive_path = Path(__file__).resolve().parents[2] / "src/main/resources/assets/libmmd/actions.zip"
+        forbidden = {"全ての親", "センター", "グルーブ", "腰", "下半身"}
+        with zipfile.ZipFile(archive_path) as archive:
+            for clip in self.clips:
+                eligible = clip.view == "third_person" and clip.category in ("attack", "use", "interact", "combat") and not clip.name.startswith("combat_dodge")
+                entry = "upper/" + clip.name + ".vmd"
+                self.assertEqual(eligible, entry in archive.namelist(), clip.name)
+                if not eligible:
+                    continue
+                _, keys, morphs = vmd.read(archive.read(entry))
+                self.assertTrue(keys, clip.name)
+                self.assertFalse(morphs)
+                self.assertTrue(all(key.bone not in forbidden and "足" not in key.bone and "ひざ" not in key.bone for key in keys), clip.name)
+
     def test_archive_is_reproducible_and_index_covers_every_clip(self):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory)

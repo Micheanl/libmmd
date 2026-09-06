@@ -43,7 +43,7 @@ final class ActionCatalogTest {
         }) {
             assertThrows(IOException.class, () -> ActionCatalog.read(archive(index, validSettings())), index);
         }
-        for (var settings : new String[] {"", "transition_seconds=NaN", "transition_seconds=-1",
+        for (var settings : new String[] {validSettings().replace("combo_reset_ticks=20", "combo_reset_ticks=0.5"), "", "transition_seconds=NaN", "transition_seconds=-1",
             "transition_seconds=0.1\nmovement_threshold=NaN\nturn_threshold_degrees=12",
             "transition_seconds=0.1\nmovement_threshold=0.01\nturn_threshold_degrees=0"}) {
             assertThrows(IOException.class, () -> ActionCatalog.read(
@@ -52,7 +52,7 @@ final class ActionCatalogTest {
     }
 
     private static String validSettings() {
-        return "transition_seconds=0.1\nmovement_threshold=0.01\nturn_threshold_degrees=12\n";
+        return "transition_seconds=0.1\nmovement_threshold=0.01\nturn_threshold_degrees=12\ncombo_reset_ticks=20\n";
     }
 
     private static ByteArrayInputStream archive(String index, String settings) throws IOException {

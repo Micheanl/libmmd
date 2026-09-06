@@ -15,6 +15,41 @@ final class PlayerActionControllerTest {
     }
 
     @Test
+    void keepsLocomotionIndependentDuringUpperBodyActionsAndClearsOnDeath() {
+        var controller = new PlayerActionController(ActionCatalog.bundled());
+        var bow = controller.update(state(0, "move_walk", "use_bow", "attack_unarmed", false, 0, 0, 0, true, 0));
+        assertEquals("move_walk", bow.base());
+        assertEquals("use_bow", bow.upperBody());
+        var running = controller.update(state(1, "move_run", "use_bow", "attack_unarmed", false, 0, 0, 0, true, 0));
+        assertEquals("move_run", running.base());
+        assertEquals(bow.revision(), running.revision());
+        controller.event("combat_sword_light_1", 2);
+        var attack = controller.update(state(3, "move_run", null, "attack_sword", true, 0, 0, 0, true, 0));
+        assertEquals("combat_sword_light_1", attack.upperBody());
+        assertEquals("move_run", attack.base());
+        var death = controller.update(state(4, "react_death", null, "attack_sword", false, 0, 0, 0, true, 0));
+        assertEquals("react_death", death.base());
+        assertNull(death.upperBody());
+        var reset = controller.update(state(0, "move_idle", null, "attack_sword", false, 0, 0, 0, true, 0));
+        assertEquals("move_idle", reset.base());
+    }
+
+    @Test
+    void combatCombosWrapAndResetAcrossWeaponsAirAndTimeout() {
+        var controller = new CombatActionController(20);
+        assertEquals("combat_sword_light_1", controller.attack("sword", false, 0));
+        assertEquals("combat_sword_light_2", controller.attack("sword", false, 5));
+        assertEquals("combat_sword_light_3", controller.attack("sword", false, 10));
+        assertEquals("combat_sword_light_1", controller.attack("sword", false, 15));
+        assertEquals("combat_sword_air_1", controller.attack("sword", true, 16));
+        assertEquals("combat_sword_air_2", controller.attack("sword", true, 17));
+        assertEquals("combat_sword_air_1", controller.attack("sword", true, 18));
+        assertEquals("combat_axe_air_1", controller.attack("axe", true, 19));
+        assertEquals("combat_axe_air_1", controller.attack("axe", true, 40));
+        assertEquals("combat_axe_air_1", controller.attack("axe", true, 0));
+    }
+
+    @Test
     void mapsEveryItemUseAnimationForBothArms() {
         var catalog = ActionCatalog.bundled();
         for (var animation : ItemUseAnimation.values()) {

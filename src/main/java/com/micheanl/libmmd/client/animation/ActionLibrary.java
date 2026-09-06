@@ -22,10 +22,18 @@ public final class ActionLibrary implements AutoCloseable {
     }
 
     public synchronized NativeRuntime.Motion motion(String name) {
+        return motion(name, false);
+    }
+
+    public synchronized NativeRuntime.Motion upperBodyMotion(String name) {
+        return motion(name, true);
+    }
+
+    private NativeRuntime.Motion motion(String name, boolean upperBody) {
         if (isClosed) throw new IllegalStateException("Action library is closed");
         catalog.definition(name);
-        return motions.computeIfAbsent(name, key -> {
-            var motion = model.loadMotion(catalog.bytes(key));
+        return motions.computeIfAbsent(upperBody ? "upper/" + name : name, key -> {
+            var motion = model.loadMotion(upperBody ? catalog.upperBodyBytes(name) : catalog.bytes(name));
             if (motion.info().boundBoneCount() == 0) {
                 motion.close();
                 throw new IllegalArgumentException("Action has no matching model bones: " + key);

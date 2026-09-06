@@ -1,0 +1,450 @@
+action	view	status	input_path	render_path	visual_validation
+attack_axe	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_axe_critical	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_axe_critical_left	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_axe_left	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_mace	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_mace_critical	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_mace_critical_left	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_mace_left	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_mace_smash	third_person	asset_only	none	none	pending
+attack_mace_smash_left	third_person	asset_only	none	none	pending
+attack_spear	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_spear_critical	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_spear_critical_left	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_spear_left	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_stab	third_person	wired_not_playtested	STAB hand swing -> VanillaActionSampler.sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_stab_left	third_person	wired_not_playtested	STAB hand swing -> VanillaActionSampler.sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_swing	third_person	asset_only	none	none	pending
+attack_swing_left	third_person	asset_only	none	none	pending
+attack_sword	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_sword_critical	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_sword_critical_left	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_sword_left	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_sword_sweep	third_person	asset_only	none	none	pending
+attack_sword_sweep_left	third_person	asset_only	none	none	pending
+attack_tool	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_tool_critical	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_tool_critical_left	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_tool_left	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_trident	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_trident_critical	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_trident_critical_left	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_trident_left	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_unarmed	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_unarmed_critical	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_unarmed_critical_left	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+attack_unarmed_left	third_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_axe_air_1	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_axe_air_1_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_axe_air_2	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_axe_air_2_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_axe_charge	third_person	asset_only	none	none	pending
+combat_axe_charge_left	third_person	asset_only	none	none	pending
+combat_axe_heavy	third_person	asset_only	none	none	pending
+combat_axe_heavy_left	third_person	asset_only	none	none	pending
+combat_axe_light_1	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_axe_light_1_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_axe_light_2	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_axe_light_2_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_axe_light_3	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_axe_light_3_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_counter	third_person	asset_only	none	none	pending
+combat_counter_left	third_person	asset_only	none	none	pending
+combat_dodge_back	third_person	asset_only	none	none	pending
+combat_dodge_forward	third_person	asset_only	none	none	pending
+combat_dodge_left	third_person	asset_only	none	none	pending
+combat_dodge_right	third_person	asset_only	none	none	pending
+combat_guard	third_person	asset_only	none	none	pending
+combat_lock_on	third_person	asset_only	none	none	pending
+combat_mace_air_1	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_mace_air_1_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_mace_air_2	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_mace_air_2_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_mace_charge	third_person	asset_only	none	none	pending
+combat_mace_charge_left	third_person	asset_only	none	none	pending
+combat_mace_heavy	third_person	asset_only	none	none	pending
+combat_mace_heavy_left	third_person	asset_only	none	none	pending
+combat_mace_light_1	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_mace_light_1_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_mace_light_2	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_mace_light_2_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_mace_light_3	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_mace_light_3_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_parry	third_person	asset_only	none	none	pending
+combat_spear_air_1	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_spear_air_1_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_spear_air_2	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_spear_air_2_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_spear_charge	third_person	asset_only	none	none	pending
+combat_spear_charge_left	third_person	asset_only	none	none	pending
+combat_spear_heavy	third_person	asset_only	none	none	pending
+combat_spear_heavy_left	third_person	asset_only	none	none	pending
+combat_spear_light_1	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_spear_light_1_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_spear_light_2	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_spear_light_2_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_spear_light_3	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_spear_light_3_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_sword_air_1	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_sword_air_1_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_sword_air_2	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_sword_air_2_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_sword_charge	third_person	asset_only	none	none	pending
+combat_sword_charge_left	third_person	asset_only	none	none	pending
+combat_sword_heavy	third_person	asset_only	none	none	pending
+combat_sword_heavy_left	third_person	asset_only	none	none	pending
+combat_sword_light_1	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_sword_light_1_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_sword_light_2	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_sword_light_2_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_sword_light_3	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_sword_light_3_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_tool_air_1	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_tool_air_1_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_tool_air_2	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_tool_air_2_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_tool_charge	third_person	asset_only	none	none	pending
+combat_tool_charge_left	third_person	asset_only	none	none	pending
+combat_tool_heavy	third_person	asset_only	none	none	pending
+combat_tool_heavy_left	third_person	asset_only	none	none	pending
+combat_tool_light_1	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_tool_light_1_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_tool_light_2	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_tool_light_2_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_tool_light_3	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_tool_light_3_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_trident_air_1	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_trident_air_1_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_trident_air_2	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_trident_air_2_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_trident_charge	third_person	asset_only	none	none	pending
+combat_trident_charge_left	third_person	asset_only	none	none	pending
+combat_trident_heavy	third_person	asset_only	none	none	pending
+combat_trident_heavy_left	third_person	asset_only	none	none	pending
+combat_trident_light_1	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_trident_light_1_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_trident_light_2	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_trident_light_2_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_trident_light_3	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_trident_light_3_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_unarmed_air_1	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_unarmed_air_1_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_unarmed_air_2	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_unarmed_air_2_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_unarmed_charge	third_person	asset_only	none	none	pending
+combat_unarmed_charge_left	third_person	asset_only	none	none	pending
+combat_unarmed_heavy	third_person	asset_only	none	none	pending
+combat_unarmed_heavy_left	third_person	asset_only	none	none	pending
+combat_unarmed_light_1	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_unarmed_light_1_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_unarmed_light_2	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_unarmed_light_2_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_unarmed_light_3	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+combat_unarmed_light_3_left	third_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+fp_attack_axe	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_axe_critical	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_axe_critical_left	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_axe_left	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_mace	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_mace_critical	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_mace_critical_left	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_mace_left	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_mace_smash	first_person	asset_only	none	none	pending
+fp_attack_mace_smash_left	first_person	asset_only	none	none	pending
+fp_attack_spear	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_spear_critical	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_spear_critical_left	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_spear_left	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_stab	first_person	wired_not_playtested	STAB hand swing -> VanillaActionSampler.sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_stab_left	first_person	wired_not_playtested	STAB hand swing -> VanillaActionSampler.sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_swing	first_person	asset_only	none	none	pending
+fp_attack_swing_left	first_person	asset_only	none	none	pending
+fp_attack_sword	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_sword_critical	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_sword_critical_left	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_sword_left	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_sword_sweep	first_person	asset_only	none	none	pending
+fp_attack_sword_sweep_left	first_person	asset_only	none	none	pending
+fp_attack_tool	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_tool_critical	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_tool_critical_left	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_tool_left	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_trident	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_trident_critical	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_trident_critical_left	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_trident_left	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_unarmed	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_unarmed_critical	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_unarmed_critical_left	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_attack_unarmed_left	first_person	wired_not_playtested	hand swing fallback -> VanillaActionSampler.sample (critical is inferred)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_axe_air_1	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_axe_air_1_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_axe_air_2	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_axe_air_2_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_axe_charge	first_person	asset_only	none	none	pending
+fp_combat_axe_charge_left	first_person	asset_only	none	none	pending
+fp_combat_axe_heavy	first_person	asset_only	none	none	pending
+fp_combat_axe_heavy_left	first_person	asset_only	none	none	pending
+fp_combat_axe_light_1	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_axe_light_1_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_axe_light_2	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_axe_light_2_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_axe_light_3	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_axe_light_3_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_counter	first_person	asset_only	none	none	pending
+fp_combat_counter_left	first_person	asset_only	none	none	pending
+fp_combat_guard	first_person	asset_only	none	none	pending
+fp_combat_lock_on	first_person	asset_only	none	none	pending
+fp_combat_mace_air_1	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_mace_air_1_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_mace_air_2	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_mace_air_2_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_mace_charge	first_person	asset_only	none	none	pending
+fp_combat_mace_charge_left	first_person	asset_only	none	none	pending
+fp_combat_mace_heavy	first_person	asset_only	none	none	pending
+fp_combat_mace_heavy_left	first_person	asset_only	none	none	pending
+fp_combat_mace_light_1	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_mace_light_1_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_mace_light_2	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_mace_light_2_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_mace_light_3	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_mace_light_3_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_parry	first_person	asset_only	none	none	pending
+fp_combat_spear_air_1	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_spear_air_1_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_spear_air_2	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_spear_air_2_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_spear_charge	first_person	asset_only	none	none	pending
+fp_combat_spear_charge_left	first_person	asset_only	none	none	pending
+fp_combat_spear_heavy	first_person	asset_only	none	none	pending
+fp_combat_spear_heavy_left	first_person	asset_only	none	none	pending
+fp_combat_spear_light_1	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_spear_light_1_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_spear_light_2	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_spear_light_2_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_spear_light_3	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_spear_light_3_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_sword_air_1	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_sword_air_1_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_sword_air_2	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_sword_air_2_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_sword_charge	first_person	asset_only	none	none	pending
+fp_combat_sword_charge_left	first_person	asset_only	none	none	pending
+fp_combat_sword_heavy	first_person	asset_only	none	none	pending
+fp_combat_sword_heavy_left	first_person	asset_only	none	none	pending
+fp_combat_sword_light_1	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_sword_light_1_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_sword_light_2	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_sword_light_2_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_sword_light_3	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_sword_light_3_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_tool_air_1	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_tool_air_1_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_tool_air_2	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_tool_air_2_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_tool_charge	first_person	asset_only	none	none	pending
+fp_combat_tool_charge_left	first_person	asset_only	none	none	pending
+fp_combat_tool_heavy	first_person	asset_only	none	none	pending
+fp_combat_tool_heavy_left	first_person	asset_only	none	none	pending
+fp_combat_tool_light_1	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_tool_light_1_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_tool_light_2	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_tool_light_2_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_tool_light_3	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_tool_light_3_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_trident_air_1	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_trident_air_1_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_trident_air_2	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_trident_air_2_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_trident_charge	first_person	asset_only	none	none	pending
+fp_combat_trident_charge_left	first_person	asset_only	none	none	pending
+fp_combat_trident_heavy	first_person	asset_only	none	none	pending
+fp_combat_trident_heavy_left	first_person	asset_only	none	none	pending
+fp_combat_trident_light_1	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_trident_light_1_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_trident_light_2	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_trident_light_2_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_trident_light_3	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_trident_light_3_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_unarmed_air_1	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_unarmed_air_1_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_unarmed_air_2	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_unarmed_air_2_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_unarmed_charge	first_person	asset_only	none	none	pending
+fp_combat_unarmed_charge_left	first_person	asset_only	none	none	pending
+fp_combat_unarmed_heavy	first_person	asset_only	none	none	pending
+fp_combat_unarmed_heavy_left	first_person	asset_only	none	none	pending
+fp_combat_unarmed_light_1	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_unarmed_light_1_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_unarmed_light_2	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_unarmed_light_2_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_unarmed_light_3	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_combat_unarmed_light_3_left	first_person	wired_not_playtested	MultiPlayerGameMode.attack RETURN -> ClientBootstrap.attack -> CombatActionController -> pendingActions -> sample (local only)	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_book	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_book_left	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_bucket	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_bucket_left	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_drop	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_drop_left	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_equip	first_person	asset_only	none	none	pending
+fp_interact_equip_left	first_person	asset_only	none	none	pending
+fp_interact_feed	first_person	asset_only	none	none	pending
+fp_interact_feed_left	first_person	asset_only	none	none	pending
+fp_interact_fish_cast	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_fish_cast_left	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_fish_reel	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_fish_reel_left	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_ignite	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_ignite_left	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_interact	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_interact_left	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_inventory	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_inventory_left	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_leash	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_leash_left	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_mine	first_person	wired_not_playtested	isDestroying + hand swing -> VanillaActionSampler.sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_mine_left	first_person	wired_not_playtested	isDestroying + hand swing -> VanillaActionSampler.sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_pickup	first_person	asset_only	none	none	pending
+fp_interact_pickup_left	first_person	asset_only	none	none	pending
+fp_interact_place	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_place_left	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_shear	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_shear_left	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_swap_hands	first_person	asset_only	none	none	pending
+fp_interact_swap_hands_left	first_person	asset_only	none	none	pending
+fp_interact_throw	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_interact_throw_left	first_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_block	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_block_left	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_bow	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_bow_left	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_brush	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_brush_left	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_bundle	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_bundle_left	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_crossbow_charge	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_crossbow_charge_left	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_crossbow_hold	first_person	asset_only	none	none	pending
+fp_use_crossbow_hold_left	first_person	asset_only	none	none	pending
+fp_use_drink	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_drink_left	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_eat	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_eat_left	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_fishing_hold	first_person	asset_only	none	none	pending
+fp_use_fishing_hold_left	first_person	asset_only	none	none	pending
+fp_use_item	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_item_left	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_map	first_person	asset_only	none	none	pending
+fp_use_spear	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_spear_left	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_spyglass	first_person	vanilla_fallback	END_CLIENT_TICK -> VanillaActionSampler.useAction	scope suppresses custom hands; not counted as rendered	pending
+fp_use_spyglass_left	first_person	vanilla_fallback	END_CLIENT_TICK -> VanillaActionSampler.useAction	scope suppresses custom hands; not counted as rendered	pending
+fp_use_toot_horn	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_toot_horn_left	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_trident	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_trident_left	first_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	tick playback -> fp_ clip -> FirstPersonInstance -> submitHandsWithItems -> RenderFeature	pending
+fp_use_two_hands	first_person	asset_only	none	none	pending
+interact_book	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_book_left	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_bucket	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_bucket_left	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_drop	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_drop_left	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_equip	third_person	asset_only	none	none	pending
+interact_equip_left	third_person	asset_only	none	none	pending
+interact_feed	third_person	asset_only	none	none	pending
+interact_feed_left	third_person	asset_only	none	none	pending
+interact_fish_cast	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_fish_cast_left	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_fish_reel	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_fish_reel_left	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_ignite	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_ignite_left	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_interact	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_interact_left	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_inventory	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_inventory_left	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_leash	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_leash_left	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_mine	third_person	wired_not_playtested	isDestroying + hand swing -> VanillaActionSampler.sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_mine_left	third_person	wired_not_playtested	isDestroying + hand swing -> VanillaActionSampler.sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_pickup	third_person	asset_only	none	none	pending
+interact_pickup_left	third_person	asset_only	none	none	pending
+interact_place	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_place_left	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_shear	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_shear_left	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_swap_hands	third_person	asset_only	none	none	pending
+interact_swap_hands_left	third_person	asset_only	none	none	pending
+interact_throw	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+interact_throw_left	third_person	wired_not_playtested	PlayerInteractionMixin -> triggerAction -> pendingActions -> sample	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+move_boat	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_climb	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_climb_down	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_climb_idle	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_crawl	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_dismount	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_fall	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_fly	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_fly_down	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_fly_up	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_glide	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_idle	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_jump_air	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_jump_land	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_jump_start	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_minecart	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_mount	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_ride	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_riptide	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_run	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_sleep	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_sneak_idle	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_sneak_walk	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_start	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_stop	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_swim	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_turn_left	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_turn_right	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_walk	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_walk_back	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_walk_back_left	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_walk_back_right	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_walk_forward_left	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_walk_forward_right	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_walk_left	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+move_walk_right	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+react_death	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+react_freeze	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+react_hurt	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.movement / PlayerActionController.transition or hurt edge	PlayerInstance -> play(base) -> native scene -> RenderFeature	pending
+use_block	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_block_left	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_bow	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_bow_left	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_brush	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_brush_left	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_bundle	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_bundle_left	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_crossbow_charge	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_crossbow_charge_left	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_crossbow_hold	third_person	asset_only	none	none	pending
+use_crossbow_hold_left	third_person	asset_only	none	none	pending
+use_drink	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_drink_left	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_eat	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_eat_left	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_fishing_hold	third_person	asset_only	none	none	pending
+use_fishing_hold_left	third_person	asset_only	none	none	pending
+use_item	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_item_left	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_map	third_person	asset_only	none	none	pending
+use_spear	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_spear_left	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_spyglass	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_spyglass_left	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_toot_horn	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_toot_horn_left	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_trident	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_trident_left	third_person	wired_not_playtested	END_CLIENT_TICK -> VanillaActionSampler.useAction	PlayerInstance -> playOverlay(upper/) -> native scene -> RenderFeature	pending
+use_two_hands	third_person	asset_only	none	none	pending

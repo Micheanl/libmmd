@@ -54,6 +54,7 @@ public final class ClientCommandRegistrar {
                             try {
                                 players.clear();
                                 models.load(path);
+                                players.validateModel();
                                 context.getSource().sendFeedback(Component.literal("Model loaded: " + models.packPath()));
                                 return 1;
                             } catch (RuntimeException failure) {

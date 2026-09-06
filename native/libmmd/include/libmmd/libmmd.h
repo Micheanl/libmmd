@@ -498,6 +498,9 @@ LIBMMD_API libmmd_status libmmd_model_instance_play_overlay(
 LIBMMD_API libmmd_status libmmd_model_instance_stop_overlay(
     libmmd_model_instance* instance,
     float fade_seconds);
+LIBMMD_API libmmd_status libmmd_model_instance_get_overlay_state(
+    const libmmd_model_instance* instance,
+    libmmd_instance_state* output);
 LIBMMD_API libmmd_status libmmd_model_instance_get_state(
     const libmmd_model_instance* instance,
     libmmd_instance_state* output);

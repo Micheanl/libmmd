@@ -14,12 +14,14 @@ public final class ActionCatalog {
     private static final String RESOURCE = "/assets/libmmd/actions.zip";
     private final Map<String, Definition> definitions;
     private final Map<String, byte[]> clips;
+    private final int comboResetTicks;
     private final float transitionSeconds;
     private final float movementThreshold;
     private final float turnThresholdDegrees;
 
     private ActionCatalog(Map<String, Definition> definitions, Map<String, byte[]> clips, float transitionSeconds,
-                          float movementThreshold, float turnThresholdDegrees) {
+                          float movementThreshold, float turnThresholdDegrees, int comboResetTicks) {
+        this.comboResetTicks = comboResetTicks;
         this.definitions = Map.copyOf(definitions);
         this.clips = Map.copyOf(clips);
         this.transitionSeconds = transitionSeconds;
@@ -80,16 +82,31 @@ public final class ActionCatalog {
             throw new IOException("Invalid action transition duration");
         }
         return new ActionCatalog(definitions, entries, transitionSeconds,
-            positiveSetting(settings, "movement_threshold"), positiveSetting(settings, "turn_threshold_degrees"));
+            positiveSetting(settings, "movement_threshold"), positiveSetting(settings, "turn_threshold_degrees"),
+            positiveIntegerSetting(settings, "combo_reset_ticks"));
     }
+
+    public boolean contains(String name) { return definitions.containsKey(name); }
 
     public List<String> names() {
         return definitions.keySet().stream().sorted().toList();
     }
 
+    public int comboResetTicks() { return comboResetTicks; }
+
     public float transitionSeconds() { return transitionSeconds; }
     public float movementThreshold() { return movementThreshold; }
     public float turnThresholdDegrees() { return turnThresholdDegrees; }
+
+    private static int positiveIntegerSetting(Properties settings, String name) throws IOException {
+        try {
+            int value = Integer.parseInt(settings.getProperty(name, ""));
+            if (value <= 0) throw new IOException("Invalid action setting: " + name);
+            return value;
+        } catch (NumberFormatException failure) {
+            throw new IOException("Invalid action setting: " + name, failure);
+        }
+    }
 
     private static float positiveSetting(Properties settings, String name) throws IOException {
         try {
@@ -105,6 +122,17 @@ public final class ActionCatalog {
         var definition = definitions.get(name);
         if (definition == null) throw new IllegalArgumentException("Unknown action: " + name);
         return definition;
+    }
+
+    public boolean hasUpperBody(String name) {
+        return clips.containsKey("upper/" + name + ".vmd");
+    }
+
+    public byte[] upperBodyBytes(String name) {
+        definition(name);
+        var bytes = clips.get("upper/" + name + ".vmd");
+        if (bytes == null) throw new IllegalArgumentException("Missing upper body action: " + name);
+        return bytes.clone();
     }
 
     public byte[] bytes(String name) {

@@ -993,6 +993,19 @@ libmmd_status libmmd_model_instance_get_state(
     return LIBMMD_STATUS_OK;
 }
 
+libmmd_status libmmd_model_instance_get_overlay_state(
+    const libmmd_model_instance* instance,
+    libmmd_instance_state* output) {
+    const auto status = libmmd_model_instance_get_state(instance, output);
+    if (status != LIBMMD_STATUS_OK) return status;
+    const auto& animation = instance->value->animation();
+    output->playing = animation.overlay_playing() ? 1u : 0u;
+    output->looping = animation.overlay_looping() ? 1u : 0u;
+    output->playback_seconds = animation.overlay_playback_seconds();
+    output->transition_weight = animation.overlay_transition_weight();
+    return LIBMMD_STATUS_OK;
+}
+
 libmmd_status libmmd_model_instance_get_matrices(
     const libmmd_model_instance* instance,
     libmmd_matrix_view* output) {

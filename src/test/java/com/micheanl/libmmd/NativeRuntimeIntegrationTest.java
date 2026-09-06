@@ -1,6 +1,8 @@
 package com.micheanl.libmmd;
 
 import com.micheanl.libmmd.runtime.NativeRuntime;
+import com.micheanl.libmmd.client.runtime.ClientNativeRuntime;
+import com.micheanl.libmmd.client.runtime.ClientPhysicsSettings;
 import com.micheanl.libmmd.runtime.PhysicsRuntime;
 import com.micheanl.libmmd.runtime.SceneRuntime;
 
@@ -25,6 +27,72 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 final class NativeRuntimeIntegrationTest {
+    @Test
+    void clientEnablesBodyPhysicsAndKeepsFirstPersonAnimated(@TempDir Path directory) throws IOException {
+        var pmx = directory.resolve("client-physics.pmx");
+        Files.write(pmx, dynamicSpherePmx());
+        var settings = ClientPhysicsSettings.load(directory);
+        try (var client = ClientNativeRuntime.open(settings);
+             var model = client.runtime().loadPmx(pmx);
+             var body = client.scene().createInstance(model);
+             var arms = client.firstPersonScene().createInstance(model)) {
+            var initial = arms.matrices().data().toArray(JAVA_FLOAT);
+            for (int tick = 0; tick < 20; tick++) client.update(1.0f / 20.0f);
+            assertTrue(body.renderPacket().matrices().getAtIndex(JAVA_FLOAT, 13) < -1.0f);
+            assertArrayEquals(initial, arms.matrices().data().toArray(JAVA_FLOAT), 0.0001f);
+            body.resetPhysics();
+            assertArrayEquals(initial, body.matrices().data().toArray(JAVA_FLOAT), 0.0001f);
+        }
+        Files.writeString(directory.resolve("libmmd-physics.properties"), "enabled=false\n");
+        try (var client = ClientNativeRuntime.open(ClientPhysicsSettings.load(directory));
+             var model = client.runtime().loadPmx(pmx);
+             var body = client.scene().createInstance(model)) {
+            var initial = body.matrices().data().toArray(JAVA_FLOAT);
+            for (int tick = 0; tick < 20; tick++) client.update(1.0f / 20.0f);
+            assertArrayEquals(initial, body.matrices().data().toArray(JAVA_FLOAT), 0.0001f);
+        }
+    }
+
+    @Test
+    void playsStopsAndReleasesOverlayThroughFfm(@TempDir Path directory) throws IOException {
+        var pmx = directory.resolve("overlay.pmx");
+        Files.write(pmx, dynamicSpherePmx());
+        var bytes = ByteBuffer.allocate(296).order(ByteOrder.LITTLE_ENDIAN);
+        bytes.put("Vocaloid Motion Data 0002".getBytes(StandardCharsets.US_ASCII));
+        bytes.position(50);
+        bytes.putInt(2);
+        for (int frame : new int[] {0, 30}) {
+            int start = bytes.position();
+            bytes.put("root".getBytes(StandardCharsets.US_ASCII));
+            bytes.position(start + 15);
+            bytes.putInt(frame).putFloat(4).putFloat(0).putFloat(0);
+            bytes.putFloat(0).putFloat(0).putFloat(0).putFloat(1);
+            bytes.position(start + 111);
+        }
+        for (int section = 0; section < 5; section++) bytes.putInt(0);
+        try (var runtime = NativeRuntime.open(1);
+             var model = runtime.loadPmx(pmx);
+             var scene = runtime.scenes().create();
+             var instance = scene.createInstance(model)) {
+            var motion = model.loadMotion(bytes.array());
+            instance.playOverlay(motion, false, 0);
+            assertTrue(instance.overlayState().playing());
+            assertFalse(instance.overlayState().looping());
+            scene.update(0.25f);
+            assertEquals(4, instance.matrices().data().getAtIndex(JAVA_FLOAT, 12), 0.001f);
+            for (int tick = 0; tick < 3; tick++) scene.update(0.25f);
+            assertFalse(instance.overlayState().playing());
+            motion.close();
+            try (var loop = model.loadMotion(bytes.array())) {
+                instance.playOverlay(loop, true, 0);
+                assertTrue(instance.overlayState().looping());
+                instance.stopOverlay(0);
+                assertFalse(instance.overlayState().playing());
+                assertEquals(0, instance.matrices().data().getAtIndex(JAVA_FLOAT, 12), 0.001f);
+            }
+        }
+    }
+
     @Test
     void simulatesModelPhysicsThroughFfm(@TempDir Path directory) throws IOException {
         var pmx = directory.resolve("dynamic-sphere.pmx");

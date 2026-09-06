@@ -63,6 +63,10 @@ def write_clips(output, clips):
 def write_archive(path, output, written):
     path.parent.mkdir(parents=True, exist_ok=True)
     entries = {clip.name + ".vmd": payload for clip, payload in written}
+    for clip, _ in written:
+        if clip.view == "third_person" and clip.category in ("attack", "use", "interact", "combat") and not clip.name.startswith("combat_dodge"):
+            keys = [key for key in clip.bone_keys if key.bone.startswith(("上半身", "首", "頭", "左肩", "右肩", "左腕", "右腕", "左ひじ", "右ひじ", "左手", "右手", "左親指", "右親指", "左人指", "右人指", "左中指", "右中指", "左薬指", "右薬指", "左小指", "右小指"))]
+            entries["upper/" + clip.name + ".vmd"] = vmd.write(keys, [])
     entries["manifest.json"] = (output / "manifest.json").read_bytes()
     settings = json.loads(Path(__file__).with_name("playback.json").read_text(encoding="utf-8"))
     entries["settings.properties"] = "".join(f"{key}={value}\n" for key, value in sorted(settings.items())).encode("ascii")

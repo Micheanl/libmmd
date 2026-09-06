@@ -23,17 +23,14 @@ float smoothstep(const float value) {
 }
 
 AnimationController::AnimationController(const std::span<const pmx::Bone> bones)
-    : pose_(bones), source_pose_(bones), target_pose_(bones),
-      overlay_source_pose_(bones), overlay_target_pose_(bones) {}
+    : pose_(bones), base_pose_(bones), source_pose_(bones), target_pose_(bones),
+      overlay_source_pose_(bones), overlay_target_pose_(bones),
+      overlay_bone_mask_(bones.size()), overlay_ik_mask_(bones.size()),
+      overlay_source_bone_mask_(bones.size()), overlay_source_ik_mask_(bones.size()) {}
 
-bool AnimationController::play(
-    const MotionClip& motion,
-    const bool looping,
-    const float fade_seconds) noexcept {
-    if (motion.bone_count() != pose_.bone_count() || !std::isfinite(fade_seconds) || fade_seconds < 0.0f) {
-        return false;
-    }
-    source_pose_ = pose_;
+bool AnimationController::play(const MotionClip& motion, const bool looping, const float fade_seconds) noexcept {
+    if (motion.bone_count() != pose_.bone_count() || !std::isfinite(fade_seconds) || fade_seconds < 0.0f) return false;
+    source_pose_ = base_pose_;
     motion_ = &motion;
     playback_seconds_ = 0.0f;
     transition_seconds_ = 0.0f;
@@ -41,13 +38,14 @@ bool AnimationController::play(
     looping_ = looping;
     stopping_ = false;
     if (!motion_->apply(0.0f, looping_, target_pose_)) return false;
-    if (fade_seconds == 0.0f) pose_ = target_pose_;
+    if (fade_seconds == 0.0f) base_pose_ = target_pose_;
+    compose_overlay();
     return true;
 }
 
 bool AnimationController::stop(const float fade_seconds) noexcept {
     if (!std::isfinite(fade_seconds) || fade_seconds < 0.0f) return false;
-    source_pose_ = pose_;
+    source_pose_ = base_pose_;
     target_pose_.reset();
     motion_ = nullptr;
     playback_seconds_ = 0.0f;
@@ -55,41 +53,59 @@ bool AnimationController::stop(const float fade_seconds) noexcept {
     transition_duration_ = fade_seconds;
     looping_ = false;
     stopping_ = fade_seconds > 0.0f;
-    if (!stopping_) pose_.reset();
+    if (!stopping_) base_pose_.reset();
+    compose_overlay();
     return true;
 }
 
-bool AnimationController::play_overlay(
-    const MotionClip& motion,
-    const bool looping,
-    const float fade_seconds) noexcept {
-    if (motion.bone_count() != pose_.bone_count() || !std::isfinite(fade_seconds) || fade_seconds < 0.0f) {
-        return false;
-    }
-    auto target = pose_;
-    if (!motion.apply_layer(0.0f, looping, target)) return false;
+bool AnimationController::play_overlay(const MotionClip& motion, const bool looping, const float fade_seconds) noexcept {
+    if (motion.bone_count() != pose_.bone_count() || !std::isfinite(fade_seconds) || fade_seconds < 0.0f) return false;
     overlay_source_pose_ = pose_;
-    overlay_target_pose_ = std::move(target);
+    overlay_source_bone_mask_ = overlay_bone_mask_;
+    overlay_source_ik_mask_ = overlay_ik_mask_;
+    std::fill(overlay_bone_mask_.begin(), overlay_bone_mask_.end(), std::uint8_t{0});
+    std::fill(overlay_ik_mask_.begin(), overlay_ik_mask_.end(), std::uint8_t{0});
+    motion.include_layer(overlay_bone_mask_, overlay_ik_mask_);
+    for (std::size_t i = 0; i < overlay_bone_mask_.size(); ++i) {
+        overlay_source_bone_mask_[i] |= overlay_bone_mask_[i];
+        overlay_source_ik_mask_[i] |= overlay_ik_mask_[i];
+    }
     overlay_motion_ = &motion;
     overlay_playback_seconds_ = 0.0f;
     overlay_transition_seconds_ = 0.0f;
     overlay_transition_duration_ = fade_seconds;
     overlay_looping_ = looping;
     overlay_stopping_ = false;
-    if (fade_seconds == 0.0f) pose_ = overlay_target_pose_;
+    compose_overlay();
     return true;
 }
 
 bool AnimationController::stop_overlay(const float fade_seconds) noexcept {
     if (!std::isfinite(fade_seconds) || fade_seconds < 0.0f) return false;
     overlay_source_pose_ = pose_;
+    for (std::size_t i = 0; i < overlay_bone_mask_.size(); ++i) {
+        overlay_source_bone_mask_[i] |= overlay_bone_mask_[i];
+        overlay_source_ik_mask_[i] |= overlay_ik_mask_[i];
+    }
     overlay_motion_ = nullptr;
     overlay_playback_seconds_ = 0.0f;
     overlay_transition_seconds_ = 0.0f;
     overlay_transition_duration_ = fade_seconds;
     overlay_looping_ = false;
     overlay_stopping_ = fade_seconds > 0.0f;
+    compose_overlay();
     return true;
+}
+
+void AnimationController::compose_overlay() noexcept {
+    pose_ = base_pose_;
+    if (overlay_motion_ != nullptr) {
+        static_cast<void>(overlay_motion_->apply_layer(overlay_playback_seconds_, overlay_looping_, pose_));
+    }
+    if (overlay_transition_duration_ > 0.0f && (overlay_motion_ != nullptr || overlay_stopping_)) {
+        const auto weight = smoothstep(overlay_transition_seconds_ / overlay_transition_duration_);
+        static_cast<void>(pose_.blend_layer(overlay_source_pose_, overlay_source_bone_mask_, overlay_source_ik_mask_, 1.0f - weight));
+    }
 }
 
 bool AnimationController::update(const float delta_seconds) noexcept {
@@ -100,46 +116,34 @@ bool AnimationController::update(const float delta_seconds) noexcept {
     }
     if (transition_duration_ > 0.0f && (motion_ != nullptr || stopping_)) {
         transition_seconds_ = std::min(transition_seconds_ + delta_seconds, transition_duration_);
-        const auto progress = smoothstep(transition_seconds_ / transition_duration_);
-        if (!pose_.blend(source_pose_, target_pose_, progress)) return false;
+        if (!base_pose_.blend(source_pose_, target_pose_, smoothstep(transition_seconds_ / transition_duration_))) return false;
         if (transition_seconds_ >= transition_duration_) {
             transition_duration_ = 0.0f;
-            transition_seconds_ = 0.0f;
             stopping_ = false;
         }
-    } else if (motion_ != nullptr) {
-        pose_ = target_pose_;
-    }
-    if (motion_ != nullptr && !looping_ && playback_seconds_ >= motion_->duration_seconds() &&
-        transition_duration_ == 0.0f) {
-        motion_ = nullptr;
-    }
-    auto base_pose = pose_;
-    if (overlay_motion_ != nullptr) {
-        overlay_playback_seconds_ += delta_seconds;
-        overlay_target_pose_ = base_pose;
-        if (!overlay_motion_->apply_layer(overlay_playback_seconds_, overlay_looping_, overlay_target_pose_)) return false;
-    } else if (overlay_stopping_) {
-        overlay_target_pose_ = base_pose;
-    }
-    if (overlay_transition_duration_ > 0.0f && (overlay_motion_ != nullptr || overlay_stopping_)) {
-        overlay_transition_seconds_ = std::min(
-            overlay_transition_seconds_ + delta_seconds, overlay_transition_duration_);
-        const auto progress = smoothstep(overlay_transition_seconds_ / overlay_transition_duration_);
-        if (!pose_.blend(overlay_source_pose_, overlay_target_pose_, progress)) return false;
+    } else if (motion_ != nullptr) base_pose_ = target_pose_;
+    if (motion_ != nullptr && !looping_ && playback_seconds_ >= motion_->duration_seconds() && transition_duration_ == 0.0f) motion_ = nullptr;
+    if (overlay_motion_ != nullptr) overlay_playback_seconds_ += delta_seconds;
+    if (overlay_transition_duration_ > 0.0f) {
+        overlay_transition_seconds_ = std::min(overlay_transition_seconds_ + delta_seconds, overlay_transition_duration_);
         if (overlay_transition_seconds_ >= overlay_transition_duration_) {
             overlay_transition_duration_ = 0.0f;
-            overlay_transition_seconds_ = 0.0f;
             overlay_stopping_ = false;
+            overlay_source_bone_mask_ = overlay_bone_mask_;
+            overlay_source_ik_mask_ = overlay_ik_mask_;
         }
-    } else if (overlay_motion_ != nullptr) {
-        pose_ = overlay_target_pose_;
     }
-    if (overlay_motion_ != nullptr && !overlay_looping_ &&
-        overlay_playback_seconds_ >= overlay_motion_->duration_seconds() && overlay_transition_duration_ == 0.0f) {
+    compose_overlay();
+    if (overlay_motion_ != nullptr && !overlay_looping_ && overlay_playback_seconds_ >= overlay_motion_->duration_seconds() && overlay_transition_duration_ == 0.0f) {
         overlay_motion_ = nullptr;
     }
     return true;
+}
+
+bool AnimationController::overlay_looping() const noexcept { return overlay_motion_ != nullptr && overlay_looping_; }
+float AnimationController::overlay_playback_seconds() const noexcept { return overlay_playback_seconds_; }
+float AnimationController::overlay_transition_weight() const noexcept {
+    return overlay_transition_duration_ == 0.0f ? 1.0f : smoothstep(overlay_transition_seconds_ / overlay_transition_duration_);
 }
 
 void AnimationController::detach(const MotionClip& motion) noexcept {
