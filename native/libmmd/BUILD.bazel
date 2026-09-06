@@ -1,0 +1,179 @@
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
+package(default_visibility = ["//visibility:public"])
+
+CORE_SOURCES = [
+    "src/mmdpack.cpp",
+    "src/mmdpack.hpp",
+    "src/motion.cpp",
+    "src/motion.hpp",
+    "src/physics.cpp",
+    "src/physics.hpp",
+    "src/pmx_reader.cpp",
+    "src/pmx_reader.hpp",
+    "src/pose.cpp",
+    "src/pose.hpp",
+    "src/render_mesh.cpp",
+    "src/render_mesh.hpp",
+    "src/runtime.cpp",
+    "src/runtime.hpp",
+    "src/skeleton.cpp",
+    "src/skeleton.hpp",
+    "src/text.cpp",
+    "src/text.hpp",
+    "src/vmd_reader.cpp",
+    "src/vmd_reader.hpp",
+]
+
+TEST_COPTS = select({
+    "@platforms//os:windows": ["/UNDEBUG"],
+    "//conditions:default": ["-UNDEBUG"],
+})
+
+cc_library(
+    name = "core",
+    srcs = CORE_SOURCES,
+    hdrs = ["include/libmmd/libmmd.h"],
+    includes = ["include"],
+    local_defines = ["LIBMMD_BUILD_SHARED"],
+    linkopts = select({
+        "@platforms//os:windows": ["ws2_32.lib"],
+        "//conditions:default": [],
+    }),
+    alwayslink = True,
+    linkstatic = True,
+    deps = ["@physx//:sdk"],
+)
+
+cc_library(
+    name = "core_cuda",
+    srcs = CORE_SOURCES,
+    hdrs = ["include/libmmd/libmmd.h"],
+    includes = ["include"],
+    local_defines = [
+        "LIBMMD_BUILD_SHARED",
+        "LIBMMD_WITH_CUDA",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+    alwayslink = True,
+    linkstatic = True,
+    deps = ["@physx//:sdk_cuda"],
+)
+
+cc_binary(
+    name = "mmd",
+    linkshared = True,
+    deps = [":core"],
+)
+
+alias(
+    name = "libmmd",
+    actual = ":mmd",
+)
+
+cc_binary(
+    name = "mmd_cuda",
+    linkshared = True,
+    deps = [":core_cuda"],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+alias(
+    name = "libmmd_cuda",
+    actual = ":mmd_cuda",
+)
+
+cc_binary(
+    name = "libmmdc",
+    srcs = ["tools/libmmdc.cpp"],
+    deps = [":core"],
+)
+
+cc_test(
+    name = "runtime_test",
+    srcs = ["tests/runtime_test.cpp"],
+    copts = TEST_COPTS,
+    deps = [":core"],
+)
+
+cc_test(
+    name = "pmx_reader_test",
+    srcs = [
+        "src/pmx_reader.cpp",
+        "src/pmx_reader.hpp",
+        "tests/pmx_reader_test.cpp",
+    ],
+    copts = TEST_COPTS,
+)
+
+cc_test(
+    name = "vmd_reader_test",
+    srcs = ["tests/vmd_reader_test.cpp"],
+    copts = TEST_COPTS,
+    deps = [":core"],
+)
+
+cc_test(
+    name = "mmdpack_test",
+    srcs = ["tests/mmdpack_test.cpp"],
+    copts = TEST_COPTS,
+    deps = [":core"],
+)
+
+cc_test(
+    name = "render_mesh_test",
+    srcs = ["tests/render_mesh_test.cpp"],
+    copts = TEST_COPTS,
+    deps = [":core"],
+)
+
+cc_test(
+    name = "pose_test",
+    srcs = ["tests/pose_test.cpp"],
+    copts = TEST_COPTS,
+    deps = [":core"],
+)
+
+cc_test(
+    name = "motion_test",
+    srcs = ["tests/motion_test.cpp"],
+    copts = TEST_COPTS,
+    deps = [":core"],
+)
+
+cc_test(
+    name = "physics_test",
+    srcs = ["tests/physics_test.cpp"],
+    copts = TEST_COPTS,
+    deps = [":core"],
+)
+
+cc_test(
+    name = "physics_cuda_test",
+    srcs = ["tests/physics_test.cpp"],
+    copts = TEST_COPTS,
+    local_defines = ["LIBMMD_TEST_CUDA"],
+    deps = [":core_cuda"],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+test_suite(
+    name = "tests",
+    tests = [
+        ":mmdpack_test",
+        ":motion_test",
+        ":physics_test",
+        ":pmx_reader_test",
+        ":pose_test",
+        ":render_mesh_test",
+        ":runtime_test",
+        ":vmd_reader_test",
+    ],
+)
+
+test_suite(
+    name = "cuda_tests",
+    tests = [":physics_cuda_test"],
+)

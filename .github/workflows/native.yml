@@ -1,0 +1,92 @@
+name: native
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux-x86_64
+            library: bazel-bin/native/libmmd/libmmd.so
+          - runner: windows-2022
+            platform: windows-x86_64
+            library: bazel-bin/native/libmmd/mmd.dll
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: setup bazel
+        uses: bazel-contrib/setup-bazel@0.19.0
+        with:
+          bazelisk-cache: true
+          disk-cache: native-${{ matrix.platform }}
+          repository-cache: true
+      - name: test runtime
+        run: bazel test //native/libmmd:tests --config=release
+      - name: stage runtime
+        shell: bash
+        run: |
+          mkdir -p "build/prebuilt/native/${{ matrix.platform }}"
+          cp "${{ matrix.library }}" "build/prebuilt/native/${{ matrix.platform }}/"
+      - name: upload runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.platform }}
+          path: build/prebuilt/native
+          if-no-files-found: error
+
+  release:
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: microsoft
+      - name: download runtimes
+        uses: actions/download-artifact@v4
+        with:
+          pattern: native-*
+          path: build/prebuilt/native
+          merge-multiple: true
+      - name: build universal mod
+        run: |
+          chmod +x ./gradlew
+          ./gradlew build -Plibmmd.native.bundle=build/prebuilt
+      - name: package sdk
+        run: |
+          mkdir -p build/release/linux/lib build/release/linux/include/libmmd
+          mkdir -p build/release/windows/bin build/release/windows/include/libmmd
+          cp build/prebuilt/native/linux-x86_64/libmmd.so build/release/linux/lib/
+          cp build/prebuilt/native/windows-x86_64/mmd.dll build/release/windows/bin/
+          cp native/libmmd/include/libmmd/libmmd.h build/release/linux/include/libmmd/
+          cp native/libmmd/include/libmmd/libmmd.h build/release/windows/include/libmmd/
+          cp LICENSE build/release/linux/
+          cp LICENSE build/release/windows/
+          tar -C build/release/linux -czf "build/release/libmmd-${GITHUB_REF_NAME}-linux-x86_64.tar.gz" .
+          cd build/release/windows
+          zip -r "../libmmd-${GITHUB_REF_NAME}-windows-x86_64.zip" .
+          cd ../../..
+          sha256sum build/release/libmmd-* > build/release/SHA256SUMS
+      - name: publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" || gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes
+          gh release upload "$GITHUB_REF_NAME" build/libs/*.jar build/release/libmmd-* build/release/SHA256SUMS --clobber

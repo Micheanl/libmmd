@@ -1,0 +1,20 @@
+module(
+    name = "libmmd",
+    version = "0.1.0",
+)
+
+bazel_dep(name = "rules_cc", version = "0.2.22")
+bazel_dep(name = "rules_foreign_cc", version = "0.15.1")
+bazel_dep(name = "platforms", version = "1.1.0")
+
+http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "physx",
+    build_file = "//third_party:physx.BUILD.bazel",
+    patch_args = ["-p1"],
+    patches = ["//third_party:physx-linux-headers.patch"],
+    sha256 = "bc894626070f0658a3235231c825c3e0f8ad1fd9d5077a63cb5bdaffe8816407",
+    strip_prefix = "PhysX-517a0073715120e114ee055b63b26c95e00d9039",
+    urls = ["https://github.com/NVIDIA-Omniverse/PhysX/archive/517a0073715120e114ee055b63b26c95e00d9039.tar.gz"],
+)

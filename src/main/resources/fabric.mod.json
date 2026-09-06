@@ -1,0 +1,33 @@
+{
+	"schemaVersion": 1,
+	"id": "libmmd",
+	"version": "${version}",
+	"name": "libmmd",
+	"license": "CC0-1.0",
+	"icon": "assets/libmmd/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			{
+				"value": "com.micheanl.libmmd.Engine",
+				"adapter": "kotlin"
+			}
+		],
+		"client": [
+			{
+				"value": "com.micheanl.libmmd.ClientBootstrap",
+				"adapter": "kotlin"
+			}
+		]
+	},
+	"mixins": [
+		"libmmd.client.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3-",
+		"java": ">=25",
+		"fabric-api": "*",
+		"fabric-language-kotlin": "*"
+	}
+}

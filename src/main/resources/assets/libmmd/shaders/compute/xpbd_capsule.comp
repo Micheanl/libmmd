@@ -1,0 +1,98 @@
+#version 430
+
+layout(local_size_x = 128) in;
+
+struct Capsule {
+	vec4 previousStartRadius;
+	vec4 previousEndFriction;
+	vec4 start;
+	vec4 end;
+};
+
+layout(std430, binding = 0) buffer Positions { vec4 positions[]; };
+layout(std430, binding = 1) buffer PreviousPositions { vec4 previousPositions[]; };
+layout(std430, binding = 2) readonly buffer Capsules { Capsule capsules[]; };
+
+#ifdef LIBMMD_VULKAN
+layout(push_constant) uniform Parameters {
+	uint ParticleCount;
+	uint CapsuleCount;
+	float ParticleRadius;
+	float Friction;
+};
+#else
+uniform uint ParticleCount;
+uniform uint CapsuleCount;
+uniform float ParticleRadius;
+uniform float Friction;
+#endif
+
+void closestSegments(vec3 p1, vec3 q1, vec3 p2, vec3 q2, out vec3 first, out vec3 second) {
+	vec3 d1 = q1 - p1;
+	vec3 d2 = q2 - p2;
+	vec3 r = p1 - p2;
+	float a = dot(d1, d1);
+	float e = dot(d2, d2);
+	float f = dot(d2, r);
+	float s = 0.0;
+	float t = 0.0;
+	if (a <= 1e-8 && e <= 1e-8) {
+		s = 0.0;
+		t = 0.0;
+	} else if (a <= 1e-8) {
+		t = clamp(f / e, 0.0, 1.0);
+	} else {
+		float c = dot(d1, r);
+		if (e <= 1e-8) {
+			s = clamp(-c / a, 0.0, 1.0);
+		} else {
+			float b = dot(d1, d2);
+			float denominator = a * e - b * b;
+			s = denominator != 0.0 ? clamp((b * f - c * e) / denominator, 0.0, 1.0) : 0.0;
+			t = (b * s + f) / e;
+			if (t < 0.0) {
+				t = 0.0;
+				s = clamp(-c / a, 0.0, 1.0);
+			} else if (t > 1.0) {
+				t = 1.0;
+				s = clamp((b - c) / a, 0.0, 1.0);
+			}
+		}
+	}
+	first = p1 + d1 * s;
+	second = p2 + d2 * t;
+}
+
+void main() {
+	uint index = gl_GlobalInvocationID.x;
+	if (index >= ParticleCount || positions[index].w == 0.0) return;
+	for (uint capsuleIndex = 0; capsuleIndex < CapsuleCount; capsuleIndex++) {
+		Capsule capsule = capsules[capsuleIndex];
+		for (int sampleIndex = 0; sampleIndex < 3; sampleIndex++) {
+			float samplePoint = float(sampleIndex) * 0.5;
+			vec3 capsuleStart = mix(capsule.previousStartRadius.xyz, capsule.start.xyz, samplePoint);
+			vec3 capsuleEnd = mix(capsule.previousEndFriction.xyz, capsule.end.xyz, samplePoint);
+			vec3 trajectoryPoint;
+			vec3 capsulePoint;
+			closestSegments(
+				previousPositions[index].xyz,
+				positions[index].xyz,
+				capsuleStart,
+				capsuleEnd,
+				trajectoryPoint,
+				capsulePoint
+			);
+			vec3 delta = trajectoryPoint - capsulePoint;
+			float distanceSquared = dot(delta, delta);
+			float radius = capsule.previousStartRadius.w + ParticleRadius;
+			if (distanceSquared >= radius * radius) continue;
+			vec3 normal = distanceSquared > 1e-8
+				? normalize(delta)
+				: normalize(previousPositions[index].xyz - capsulePoint + vec3(1e-5, 0.0, 0.0));
+			positions[index].xyz = capsulePoint + normal * radius;
+			vec3 velocity = positions[index].xyz - previousPositions[index].xyz;
+			vec3 tangent = velocity - normal * dot(velocity, normal);
+			previousPositions[index].xyz += tangent * max(Friction, capsule.previousEndFriction.w);
+		}
+	}
+}

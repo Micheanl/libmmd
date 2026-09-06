@@ -1,0 +1,61 @@
+diff --git a/physx/source/compiler/cmake/linux/PhysXFoundation.cmake b/physx/source/compiler/cmake/linux/PhysXFoundation.cmake
+index 13f689438..db52a5dce 100644
+--- a/physx/source/compiler/cmake/linux/PhysXFoundation.cmake
++++ b/physx/source/compiler/cmake/linux/PhysXFoundation.cmake
+@@ -86,7 +86,7 @@ SET(PHYSXFOUNDATION_PLATFORM_HEADERS
+ )
+ 
+ SET(PHYSXFOUNDATION_PLATFORM_INCLUDES
+-	${PHYSX_ROOT_DIR}/include/foundation/linux
++	${PHYSX_ROOT_DIR}/include/foundation/unix
+ )
+ 
+ 
+diff --git a/physx/source/compiler/cmakegpu/CMakeLists.txt b/physx/source/compiler/cmakegpu/CMakeLists.txt
+index e7597881f..b1a01c264 100644
+--- a/physx/source/compiler/cmakegpu/CMakeLists.txt
++++ b/physx/source/compiler/cmakegpu/CMakeLists.txt
+@@ -85,6 +85,6 @@ ELSE()
+ # see policy CMP0104
+ IF(PX_GENERATE_GPU_REDUCED_ARCHITECTURES)
+-	GENERATE_ARCH_CODE_LIST(SASS "80,86,89,90,100,120" PTX "120")
++	GENERATE_ARCH_CODE_LIST(SASS "89" PTX "89")
+ ELSE()
+ 	# Volta is the minimum compute arch required because NGC supports V100
+ 	GENERATE_ARCH_CODE_LIST(SASS "70,80,86,89,90,100,120" PTX "120")
+diff --git a/physx/source/gpucommon/include/cutil_math.h b/physx/source/gpucommon/include/cutil_math.h
+index d5699be0f..b84da912b 100644
+--- a/physx/source/gpucommon/include/cutil_math.h
++++ b/physx/source/gpucommon/include/cutil_math.h
+@@ -73,7 +73,7 @@ PX_FORCE_INLINE __device__ __host__ unsigned int min(unsigned int a, unsigned int
+ #endif
+ 
+ // lerp
+-inline __device__ __host__ float lerp(float a, float b, float t)
++inline __device__ __host__ float cutil_lerp(float a, float b, float t)
+ {
+     return a + t*(b-a);
+ }
+diff --git a/physx/source/cudamanager/src/CudaContextManager.cpp b/physx/source/cudamanager/src/CudaContextManager.cpp
+index 89a09fe8f..c2b6e9f39 100644
+--- a/physx/source/cudamanager/src/CudaContextManager.cpp
++++ b/physx/source/cudamanager/src/CudaContextManager.cpp
+@@ -578 +578,5 @@ CudaContextManager::CudaContextManager(const PxCudaContextManagerDesc& desc, PxPr
+-			status = cuCtxCreate(&mCtx, (unsigned int)flags, mDevHandle);
++#if CUDA_VERSION >= 13000
++			status = cuCtxCreate(&mCtx, NULL, (unsigned int)flags, mDevHandle);
++#else
++			status = cuCtxCreate(&mCtx, (unsigned int)flags, mDevHandle);
++#endif
+diff --git a/physx/include/foundation/PxMath.h b/physx/include/foundation/PxMath.h
+index 7d6cb0e2c..84df1c15d 100644
+--- a/physx/include/foundation/PxMath.h
++++ b/physx/include/foundation/PxMath.h
+@@ -45,7 +45,5 @@
+ #if (PX_LINUX_FAMILY && !PX_ARM_FAMILY)
+ // Force linking against nothing newer than glibc v2.17 to remain compatible with platforms with older glibc versions
+-__asm__(".symver expf,expf@GLIBC_2.2.5");
+-__asm__(".symver powf,powf@GLIBC_2.2.5");
+ 
+ #include <stdlib.h>
+ 

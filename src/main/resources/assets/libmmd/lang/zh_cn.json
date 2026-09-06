@@ -1,0 +1,14 @@
+{
+	"key.categories.libmmd.controls": "模型交互",
+	"key.libmmd.push": "推动指向的刚体",
+	"key.libmmd.grab": "抓取或释放指向的刚体",
+	"key.libmmd.physics_debug": "切换动画/物理调试视图",
+	"key.libmmd.reload_avatar": "重新加载玩家模型与校准",
+	"message.libmmd.no_target": "交互距离内没有模型",
+	"message.libmmd.pushed": "已推动刚体 %s",
+	"message.libmmd.grabbed": "已抓取刚体 %s",
+	"message.libmmd.released": "已释放刚体",
+	"message.libmmd.avatar_reloaded": "正在重新加载玩家模型、动作与校准",
+	"message.libmmd.debug_on": "动画/物理调试视图已开启",
+	"message.libmmd.debug_off": "动画/物理调试视图已关闭"
+}

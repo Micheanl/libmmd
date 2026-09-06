@@ -1,0 +1,107 @@
+load("@rules_foreign_cc//foreign_cc:defs.bzl", "cmake")
+
+package(default_visibility = ["//visibility:public"])
+
+licenses(["notice"])
+
+exports_files(["LICENSE.md"])
+
+filegroup(
+    name = "sources",
+    srcs = glob(["physx/**"]),
+)
+
+cmake(
+    name = "sdk_linux",
+    cache_entries = {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CXX_FLAGS": "-Wno-format-signedness -Wno-missing-include-dirs -Wno-nrvo",
+        "PX_BUILDPVDRUNTIME": "OFF",
+        "PX_BUILDSNIPPETS": "OFF",
+        "PX_ENABLE_INSTALL": "ON",
+        "PX_GENERATE_GPU_PROJECTS": "OFF",
+        "PX_GENERATE_STATIC_LIBRARIES": "ON",
+    },
+    lib_source = ":sources",
+    out_include_dir = "include",
+    out_lib_dir = "lib64",
+    out_static_libs = [
+        "libPhysXExtensions_static_64.a",
+        "libPhysXCharacterKinematic_static_64.a",
+        "libPhysXVehicle_static_64.a",
+        "libPhysXCooking_static_64.a",
+        "libPhysX_static_64.a",
+        "libPhysXPvdSDK_static_64.a",
+        "libPhysXCommon_static_64.a",
+        "libPhysXFoundation_static_64.a",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+cmake(
+    name = "sdk_windows",
+    cache_entries = {
+        "CMAKE_BUILD_TYPE": "Release",
+        "PX_BUILDPVDRUNTIME": "OFF",
+        "PX_BUILDSNIPPETS": "OFF",
+        "PX_ENABLE_INSTALL": "ON",
+        "PX_GENERATE_GPU_PROJECTS": "OFF",
+        "PX_GENERATE_STATIC_LIBRARIES": "ON",
+    },
+    lib_source = ":sources",
+    out_include_dir = "include",
+    out_lib_dir = "lib",
+    out_static_libs = [
+        "PhysXExtensions_static_64.lib",
+        "PhysXCharacterKinematic_static_64.lib",
+        "PhysXVehicle_static_64.lib",
+        "PhysXCooking_static_64.lib",
+        "PhysX_static_64.lib",
+        "PhysXPvdSDK_static_64.lib",
+        "PhysXCommon_static_64.lib",
+        "PhysXFoundation_static_64.lib",
+    ],
+    target_compatible_with = ["@platforms//os:windows"],
+)
+
+alias(
+    name = "sdk",
+    actual = select({
+        "@platforms//os:windows": ":sdk_windows",
+        "//conditions:default": ":sdk_linux",
+    }),
+)
+
+cmake(
+    name = "sdk_cuda",
+    cache_entries = {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_CUDA_ARCHITECTURES": "89",
+        "CMAKE_CUDA_COMPILER": "/usr/local/cuda-13.3/bin/nvcc",
+        "CMAKE_CUDA_HOST_COMPILER": "/usr/bin/g++-15",
+        "CMAKE_CXX_FLAGS": "-Wno-format-signedness -Wno-missing-include-dirs -Wno-nested-anon-types -Wno-nrvo -Wno-shift-sign-overflow",
+        "CUDAToolkit_ROOT": "/usr/local/cuda-13.3",
+        "PX_BUILDPVDRUNTIME": "OFF",
+        "PX_BUILDSNIPPETS": "OFF",
+        "PX_ENABLE_INSTALL": "ON",
+        "PX_GENERATE_GPU_PROJECTS": "ON",
+        "PX_GENERATE_GPU_REDUCED_ARCHITECTURES": "ON",
+        "PX_GENERATE_GPU_STATIC_LIBRARIES": "OFF",
+        "PX_GENERATE_STATIC_LIBRARIES": "ON",
+    },
+    lib_source = ":sources",
+    out_include_dir = "include",
+    out_lib_dir = "lib64",
+    out_shared_libs = ["libPhysXGpu_64.so"],
+    out_static_libs = [
+        "libPhysXExtensions_static_64.a",
+        "libPhysXCharacterKinematic_static_64.a",
+        "libPhysXVehicle_static_64.a",
+        "libPhysXCooking_static_64.a",
+        "libPhysX_static_64.a",
+        "libPhysXPvdSDK_static_64.a",
+        "libPhysXCommon_static_64.a",
+        "libPhysXFoundation_static_64.a",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)

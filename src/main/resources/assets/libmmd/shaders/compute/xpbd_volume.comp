@@ -1,0 +1,62 @@
+#version 430
+
+layout(local_size_x = 1) in;
+
+struct VolumeConstraint {
+	uvec4 indices;
+	vec4 properties;
+};
+
+layout(std430, binding = 0) buffer Positions { vec4 positions[]; };
+layout(std430, binding = 1) readonly buffer VolumeConstraints { VolumeConstraint constraints[]; };
+layout(std430, binding = 2) readonly buffer TriangleIndices { uint triangleIndices[]; };
+layout(std430, binding = 3) readonly buffer ParticleIndices { uint particleIndices[]; };
+layout(std430, binding = 4) buffer VolumeGradients { vec4 gradients[]; };
+layout(std430, binding = 5) buffer VolumeLambdas { float lambdas[]; };
+
+#ifdef LIBMMD_VULKAN
+layout(push_constant) uniform Parameters {
+	uint ConstraintCount;
+	float DeltaSeconds;
+};
+#else
+uniform uint ConstraintCount;
+uniform float DeltaSeconds;
+#endif
+
+void main() {
+	uint constraintIndex = gl_GlobalInvocationID.x;
+	if (constraintIndex >= ConstraintCount) return;
+	VolumeConstraint constraint = constraints[constraintIndex];
+	for (uint offset = 0; offset < constraint.indices.w; offset++) {
+		gradients[particleIndices[constraint.indices.z + offset]] = vec4(0.0);
+	}
+	float volume = 0.0;
+	for (uint offset = 0; offset < constraint.indices.y; offset += 3) {
+		uint triangle = constraint.indices.x + offset;
+		uint first = triangleIndices[triangle];
+		uint second = triangleIndices[triangle + 1];
+		uint third = triangleIndices[triangle + 2];
+		vec3 a = positions[first].xyz;
+		vec3 b = positions[second].xyz;
+		vec3 c = positions[third].xyz;
+		volume += dot(a, cross(b, c)) / 6.0;
+		gradients[first].xyz += cross(b, c) / 6.0;
+		gradients[second].xyz += cross(c, a) / 6.0;
+		gradients[third].xyz += cross(a, b) / 6.0;
+	}
+	float denominator = 0.0;
+	for (uint offset = 0; offset < constraint.indices.w; offset++) {
+		uint particle = particleIndices[constraint.indices.z + offset];
+		denominator += positions[particle].w * dot(gradients[particle].xyz, gradients[particle].xyz);
+	}
+	float alpha = constraint.properties.y / (DeltaSeconds * DeltaSeconds);
+	if (denominator + alpha <= 1e-8) return;
+	float lambda = lambdas[constraintIndex];
+	float deltaLambda = (-(volume - constraint.properties.x) - alpha * lambda) / (denominator + alpha);
+	for (uint offset = 0; offset < constraint.indices.w; offset++) {
+		uint particle = particleIndices[constraint.indices.z + offset];
+		positions[particle].xyz += positions[particle].w * deltaLambda * gradients[particle].xyz;
+	}
+	lambdas[constraintIndex] = lambda + deltaLambda;
+}

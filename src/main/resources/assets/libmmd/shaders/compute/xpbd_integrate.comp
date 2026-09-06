@@ -1,0 +1,36 @@
+#version 430
+
+layout(local_size_x = 128) in;
+layout(std430, binding = 0) buffer Positions { vec4 positions[]; };
+layout(std430, binding = 1) buffer PreviousPositions { vec4 previousPositions[]; };
+layout(std430, binding = 2) buffer PreviousStepPositions { vec4 previousStepPositions[]; };
+layout(std430, binding = 3) readonly buffer Anchors { vec4 anchors[]; };
+
+#ifdef LIBMMD_VULKAN
+layout(push_constant) uniform Parameters {
+	uint ParticleCount;
+	float DeltaSeconds;
+	float Damping;
+	vec3 Acceleration;
+};
+#else
+uniform uint ParticleCount;
+uniform float DeltaSeconds;
+uniform float Damping;
+uniform vec3 Acceleration;
+#endif
+
+void main() {
+	uint index = gl_GlobalInvocationID.x;
+	if (index >= ParticleCount) return;
+	vec4 current = positions[index];
+	previousStepPositions[index] = current;
+	if (current.w == 0.0) {
+		positions[index] = vec4(anchors[index].xyz, current.w);
+		previousPositions[index] = vec4(anchors[index].xyz, current.w);
+		return;
+	}
+	vec3 velocity = (current.xyz - previousPositions[index].xyz) * (1.0 - Damping);
+	previousPositions[index] = current;
+	positions[index] = vec4(current.xyz + velocity + Acceleration * DeltaSeconds * DeltaSeconds, current.w);
+}

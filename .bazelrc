@@ -1,0 +1,21 @@
+common --enable_platform_specific_config
+
+build:linux --cxxopt=-std=c++23
+build:linux --host_cxxopt=-std=c++23
+build:linux --cxxopt=-Wall
+build:linux --cxxopt=-Wextra
+build:linux --cxxopt=-Wpedantic
+build:linux --cxxopt=-Werror
+build:linux --repo_env=CC=/usr/bin/clang
+build:linux --repo_env=CXX=/usr/bin/clang++
+
+build:windows --cxxopt=/std:c++latest
+build:windows --host_cxxopt=/std:c++latest
+build:windows --cxxopt=/W4
+build:windows --cxxopt=/WX
+
+build:release --compilation_mode=opt
+build:release --strip=always
+
+build --action_env=CCACHE_DISABLE=1
+test --test_output=errors

@@ -1,0 +1,33 @@
+#version 430
+
+layout(local_size_x = 128) in;
+
+struct ParticleMetadata {
+	uint vertexIndex;
+	uint region;
+	uint neighborOffset;
+	uint neighborCount;
+};
+
+layout(std430, binding = 0) readonly buffer Positions { vec4 positions[]; };
+layout(std430, binding = 1) readonly buffer PreviousStepPositions { vec4 previousStepPositions[]; };
+layout(std430, binding = 2) readonly buffer Anchors { vec4 anchors[]; };
+layout(std430, binding = 3) readonly buffer Metadata { ParticleMetadata metadata[]; };
+layout(std430, binding = 4) writeonly buffer OutputOffsets { vec4 outputOffsets[]; };
+
+#ifdef LIBMMD_VULKAN
+layout(push_constant) uniform Parameters {
+	uint ParticleCount;
+	float InterpolationAlpha;
+};
+#else
+uniform uint ParticleCount;
+uniform float InterpolationAlpha;
+#endif
+
+void main() {
+	uint index = gl_GlobalInvocationID.x;
+	if (index >= ParticleCount) return;
+	vec3 position = mix(previousStepPositions[index].xyz, positions[index].xyz, InterpolationAlpha);
+	outputOffsets[metadata[index].vertexIndex] = vec4(position - anchors[index].xyz, 0.0);
+}

@@ -1,0 +1,30 @@
+#version 430
+
+layout(local_size_x = 128) in;
+layout(std430, binding = 0) readonly buffer Positions { vec4 positions[]; };
+layout(std430, binding = 1) buffer CellHeads { int cellHeads[]; };
+layout(std430, binding = 2) buffer NextParticles { int nextParticles[]; };
+
+#ifdef LIBMMD_VULKAN
+layout(push_constant) uniform Parameters {
+	uint ParticleCount;
+	uint HashMask;
+	float CellSize;
+};
+#else
+uniform uint ParticleCount;
+uniform uint HashMask;
+uniform float CellSize;
+#endif
+
+uint hashCell(ivec3 cell) {
+	uvec3 value = uvec3(cell) * uvec3(73856093u, 19349663u, 83492791u);
+	return (value.x ^ value.y ^ value.z) & HashMask;
+}
+
+void main() {
+	uint index = gl_GlobalInvocationID.x;
+	if (index >= ParticleCount) return;
+	ivec3 cell = ivec3(floor(positions[index].xyz / CellSize));
+	nextParticles[index] = atomicExchange(cellHeads[hashCell(cell)], int(index));
+}

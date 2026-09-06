@@ -1,0 +1,13 @@
+{
+	"required": true,
+	"package": "com.micheanl.libmmd.mixin.client",
+	"compatibilityLevel": "JAVA_25",
+	"client": [
+		"AvatarRendererMixin",
+		"FrontendGpuDeviceAccessor",
+		"LivingEntityRendererMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

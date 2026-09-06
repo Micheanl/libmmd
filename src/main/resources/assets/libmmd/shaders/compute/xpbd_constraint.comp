@@ -1,0 +1,59 @@
+#version 430
+
+layout(local_size_x = 128) in;
+
+struct Constraint {
+	uint first;
+	uint second;
+	float restLength;
+	float compliance;
+};
+
+layout(std430, binding = 0) buffer Positions { vec4 positions[]; };
+layout(std430, binding = 1) readonly buffer Constraints { Constraint constraints[]; };
+layout(std430, binding = 2) buffer Lambdas { float lambdas[]; };
+
+#ifdef LIBMMD_VULKAN
+layout(push_constant) uniform Parameters {
+	uint FirstConstraint;
+	uint ConstraintCount;
+	float DeltaSeconds;
+	float MaximumStretchRatio;
+	int HardLimit;
+};
+#else
+uniform uint FirstConstraint;
+uniform uint ConstraintCount;
+uniform float DeltaSeconds;
+uniform float MaximumStretchRatio;
+uniform int HardLimit;
+#endif
+
+void main() {
+	uint localIndex = gl_GlobalInvocationID.x;
+	if (localIndex >= ConstraintCount) return;
+	uint index = FirstConstraint + localIndex;
+	Constraint constraint = constraints[index];
+	vec4 first = positions[constraint.first];
+	vec4 second = positions[constraint.second];
+	float weight = first.w + second.w;
+	if (weight <= 0.0) return;
+	vec3 delta = first.xyz - second.xyz;
+	float length = length(delta);
+	if (length <= 1e-8) return;
+	float targetLength = constraint.restLength;
+	float compliance = constraint.compliance;
+	float lambda = lambdas[index];
+	if (HardLimit != 0) {
+		targetLength *= MaximumStretchRatio;
+		if (length <= targetLength) return;
+		compliance = 0.0;
+		lambda = 0.0;
+	}
+	float alpha = compliance / (DeltaSeconds * DeltaSeconds);
+	float deltaLambda = (-(length - targetLength) - alpha * lambda) / (weight + alpha);
+	vec3 correction = delta / length * deltaLambda;
+	positions[constraint.first].xyz += first.w * correction;
+	positions[constraint.second].xyz -= second.w * correction;
+	if (HardLimit == 0) lambdas[index] = lambda + deltaLambda;
+}
