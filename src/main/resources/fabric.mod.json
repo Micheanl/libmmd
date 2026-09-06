@@ -8,26 +8,16 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			{
-				"value": "com.micheanl.libmmd.Engine",
-				"adapter": "kotlin"
-			}
+			"com.micheanl.libmmd.Engine"
 		],
 		"client": [
-			{
-				"value": "com.micheanl.libmmd.ClientBootstrap",
-				"adapter": "kotlin"
-			}
+			"com.micheanl.libmmd.ClientBootstrap"
 		]
 	},
-	"mixins": [
-		"libmmd.client.mixins.json"
-	],
 	"depends": {
 		"fabricloader": ">=0.19.5",
 		"minecraft": "~26.3-",
 		"java": ">=25",
-		"fabric-api": "*",
-		"fabric-language-kotlin": "*"
+		"fabric-api": "*"
 	}
 }

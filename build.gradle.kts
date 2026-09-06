@@ -1,17 +1,12 @@
-	import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
 	id("net.fabricmc.fabric-loom")
-	kotlin("jvm") version "2.4.10"
 	`maven-publish`
 }
 
 val minecraftVersion = providers.gradleProperty("minecraft_version")
 val loaderVersion = providers.gradleProperty("loader_version")
 val fabricApiVersion = providers.gradleProperty("fabric_api_version")
-val fabricKotlinVersion = providers.gradleProperty("fabric_kotlin_version")
 val modVersion = version.toString()
-val physxVersion = "2.7.2"
 val nativePlatform = when {
 	System.getProperty("os.name").startsWith("Windows", ignoreCase = true) -> "windows"
 	System.getProperty("os.name").startsWith("Mac", ignoreCase = true) -> "macos"
@@ -70,15 +65,8 @@ dependencies {
 	implementation(loaderVersion.map { "net.fabricmc:fabric-loader:$it" })
 
 	implementation(fabricApiVersion.map { "net.fabricmc.fabric-api:fabric-api:$it" })
-	implementation(fabricKotlinVersion.map { "net.fabricmc:fabric-language-kotlin:$it" })
-	implementation("de.fabmax:physx-jni:$physxVersion")
-	include("de.fabmax:physx-jni:$physxVersion")
-	listOf("windows", "linux", "macos", "macos-arm64").forEach { platform ->
-		runtimeOnly("de.fabmax:physx-jni:$physxVersion:natives-$platform")
-		include("de.fabmax:physx-jni:$physxVersion:natives-$platform")
-	}
-
-	testImplementation(kotlin("test"))
+	testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+	testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.10.1")
 }
 
 tasks.test {
@@ -97,14 +85,6 @@ tasks.processResources {
 
 tasks.withType<JavaCompile>().configureEach {
 	options.release = 25
-}
-
-kotlin {
-	jvmToolchain(25)
-
-	compilerOptions {
-		jvmTarget = JvmTarget.JVM_25
-	}
 }
 
 java {
